@@ -9,7 +9,7 @@ RECV_SIZE = 1024
 SOCKET_TIMEOUT = 1
 
 clients = [] # SHARED RESOURCE - MUST BE UNLOCKED AND LOCKED WHEN USING!
-client_lock = threading.lock()
+client_lock = threading.Lock()
 
 class client:
     def __init__(self, new_uuid, conn, ip, port):
@@ -35,21 +35,22 @@ class client:
         with client_lock:
             clients.remove(self)
         print(f"Client disconnected: {self.ip}:{self.port}")
-        print(f"There is now {self.get_active()} active connections.")
+        
 
 # TODO: This function needs to handle any updates sent from the client.
-def handle_client(c):
+def handle_client(client, conn):
     try:
         while True:
-            data = c.receive()
+            data = client.receive()
             print(data)
 
-            c.send("back at you!")
+            client.send("back at you!")
 
     except Exception as e:
         print(f"Client Error: {e}")
     finally:
-        c.close()
+        client.close()
+        print(f"There is now {conn.get_active()} active connections.")
 
     pass
 
@@ -98,7 +99,7 @@ class server_connection:
                 self.clients.append(c)
             
             print(f"New Client: {c}")
-            start_new_thread(handle_client, (c,) )
+            start_new_thread(handle_client, (c, self, ) )
             print(f"There is now {self.get_active()} active connections.")
 
         return 
