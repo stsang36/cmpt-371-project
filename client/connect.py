@@ -4,6 +4,13 @@ import os
 
 RECV_SIZE = 1024
 
+
+# perhaps we need to make the client multithreaded to get and send game updates to the server. 
+def send_thread(data):
+    pass
+
+def recv_thread(data):
+    pass
 class client_connection:
     def __init__(self, socket, ip, port):
         self.socket = socket

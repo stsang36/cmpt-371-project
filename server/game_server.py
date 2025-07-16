@@ -3,11 +3,13 @@ import json
 import os
 import uuid
 from _thread import start_new_thread
+import threading
 
 RECV_SIZE = 1024
 SOCKET_TIMEOUT = 1
 
-clients = []
+clients = [] # SHARED RESOURCE - MUST BE UNLOCKED AND LOCKED WHEN USING!
+client_lock = threading.lock()
 
 class client:
     def __init__(self, new_uuid, conn, ip, port):
@@ -29,10 +31,13 @@ class client:
     
     def close(self):
         self.conn.close()
-        clients.remove(self)
+
+        with client_lock:
+            clients.remove(self)
         print(f"Client disconnected: {self.ip}:{self.port}")
         print(f"There is now {self.get_active()} active connections.")
 
+# TODO: This function needs to handle any updates sent from the client.
 def handle_client(c):
     try:
         while True:
@@ -46,8 +51,12 @@ def handle_client(c):
     finally:
         c.close()
 
-
     pass
+
+def update_thread(client_list):
+    # This thread would send all clients about game updates. 
+    pass
+
 
 class server_connection:
     def __init__(self, socket, ip, port):
@@ -55,10 +64,17 @@ class server_connection:
         self.recv_size = RECV_SIZE
         self.ip = ip
         self.port = port
-        self.clients = clients
+
+        with client_lock:
+            self.clients = clients
 
     def get_active(self):
-        return len(clients)
+        clients_len = 0
+
+        with client_lock:
+            clients_len = len(clients)
+            
+        return clients_len
     
     def __str__(self):
         return f"Listening at: {self.ip}:{self.port}, with {self.get_active()} active connections."
@@ -78,12 +94,19 @@ class server_connection:
                 raise ConnectionError(f"Failed to accept: {self.ip}:{self.port}.")
             client_id = uuid.uuid4()
             c = client(client_id,client_c, client_addr[0], client_addr[1])
-            self.clients.append(c)
+            with client_lock:
+                self.clients.append(c)
+            
             print(f"New Client: {c}")
             start_new_thread(handle_client, (c,) )
             print(f"There is now {self.get_active()} active connections.")
 
         return 
+    
+    def update_clients(self):
+        #TODO: Implement a function that sends updates via a different threads that monitor game changes. 
+        # Im not sure if we need a queue for this, or handle client will send changes immediately and do it for us. 
+        pass
     
     
     def close(self):
