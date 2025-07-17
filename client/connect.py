@@ -11,6 +11,8 @@ def send_thread(data):
 
 def recv_thread(data):
     pass
+
+
 class client_connection:
     def __init__(self, socket, ip, port):
         self.socket = socket

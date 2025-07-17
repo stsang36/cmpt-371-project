@@ -12,6 +12,20 @@ clients = [] # SHARED RESOURCE - MUST BE UNLOCKED AND LOCKED WHEN USING!
 client_lock = threading.Lock()
 
 class client:
+    '''
+    Client class requires the following:
+        - ID
+        - server_connection object
+        - Client IP
+        - Client Port
+
+    Methods:
+        Printing the object itself will display the IP:PORT and ID.
+        .send(data) will encode and send the data from the paramater to the server in the server_connection object. 
+        .recieve() will decode and return the data to the caller.
+        .close() will close the client connection and remove itself from the clients list.
+
+    '''
     def __init__(self, new_uuid, conn, ip, port):
         self.id = new_uuid
         self.conn = conn
@@ -22,14 +36,19 @@ class client:
         return f"Client connected: {self.ip}:{self.port} ID: {self.id}"
     
     def send(self, data):
+        '''.send(data) will encode and send the data from the paramater to the server in the server_connection object.'''
         if isinstance(data, str):
             data = data.encode()
         self.conn.sendall(data)
+
+    
     
     def receive(self):
+        '''.recieve() will decode and return the data to the caller.'''
         return self.conn.recv(RECV_SIZE).decode()
     
     def close(self):
+        '''.close() will close the client connection and remove itself from the clients list.'''
         self.conn.close()
 
         with client_lock:
@@ -37,22 +56,6 @@ class client:
         print(f"Client disconnected: {self.ip}:{self.port}")
         
 
-# TODO: This function needs to handle any updates sent from the client.
-def handle_client(client, conn):
-    try:
-        while True:
-            data = client.receive()
-            print(data)
-
-            client.send("back at you!")
-
-    except Exception as e:
-        print(f"Client Error: {e}")
-    finally:
-        client.close()
-        print(f"There is now {conn.get_active()} active connections.")
-
-    pass
 
 def update_thread(client_list):
     # This thread would send all clients about game updates. 
@@ -60,6 +63,20 @@ def update_thread(client_list):
 
 
 class server_connection:
+    '''
+    This class requires:
+        - A socket when opened.
+        - IP
+        - Port
+    
+    Methods:
+        .get_active(), returns active connections
+        .accept_clients(client_handler), starts accepting new clients and have each one run client_handler() 
+        .Printing the object would return the IP:PORT and active connections
+        .close(), closes the socket of the server, disconnecting all clients.
+
+
+    '''
     def __init__(self, socket, ip, port):
         self.socket = socket
         self.recv_size = RECV_SIZE
@@ -70,6 +87,8 @@ class server_connection:
             self.clients = clients
 
     def get_active(self):
+        '''Gets a the number of active clients.'''
+
         clients_len = 0
 
         with client_lock:
@@ -80,7 +99,9 @@ class server_connection:
     def __str__(self):
         return f"Listening at: {self.ip}:{self.port}, with {self.get_active()} active connections."
     
-    def accept_clients(self):
+    
+    def accept_clients(self, client_handler):
+        ''' .accept_clients() must recieve a handler which contains a server_connection object and a client object.'''
         while True:
             if not self.socket:
                 raise ConnectionError("Socket is not initialized.")
@@ -99,7 +120,7 @@ class server_connection:
                 self.clients.append(c)
             
             print(f"New Client: {c}")
-            start_new_thread(handle_client, (c, self, ) )
+            start_new_thread(client_handler, (c, self, ) )
             print(f"There is now {self.get_active()} active connections.")
 
         return 
@@ -113,8 +134,9 @@ class server_connection:
     def close(self):
         self.socket.close()
 
-# Load the configuration from config.json
 def load_config():
+    '''Loads the configuration from the config.json file in the same directory as the file.'''
+
     config_path = os.path.join(os.path.dirname(__file__), 'config.json')
 
     if not os.path.exists(config_path):
@@ -124,8 +146,14 @@ def load_config():
         return json.load(file)
     
 
-# Initiate a connection using the server IP and port from config.json. Opens A TCP socket and returns the socket object.
 def init_host():
+    '''
+    Initiate a connection using the server IP and port load_config(). Opens A TCP socket and returns the socket object.
+    Returns ValueError Exception when the configuration is not loaded correctly.
+    Returns ConnectionError Exception if failed during open, bind, and listen stages.
+    
+    Returens a server_connection object on success.
+    '''
     config = load_config()
     ip = config["host_ip"]
     port = config["host_port"]
