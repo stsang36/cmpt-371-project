@@ -2,7 +2,6 @@ import socket
 import json
 import os
 import uuid
-from _thread import start_new_thread
 import threading
 
 RECV_SIZE = 1024
@@ -56,12 +55,6 @@ class client:
         print(f"Client disconnected: {self.ip}:{self.port}")
         
 
-
-def update_thread(client_list):
-    # This thread would send all clients about game updates. 
-    pass
-
-
 class server_connection:
     '''
     This class requires:
@@ -82,9 +75,9 @@ class server_connection:
         self.recv_size = RECV_SIZE
         self.ip = ip
         self.port = port
+        self.clients = clients
+        self.clients_lock = client_lock
 
-        with client_lock:
-            self.clients = clients
 
     def get_active(self):
         '''Gets a the number of active clients.'''
@@ -100,7 +93,7 @@ class server_connection:
         return f"Listening at: {self.ip}:{self.port}, with {self.get_active()} active connections."
     
     
-    def accept_clients(self, client_handler):
+    def accept_clients(self, client_handler ):
         ''' .accept_clients() must recieve a handler which contains a server_connection object and a client object.'''
         while True:
             if not self.socket:
@@ -120,7 +113,8 @@ class server_connection:
                 self.clients.append(c)
             
             print(f"New Client: {c}")
-            start_new_thread(client_handler, (c, self, ) )
+            t = threading.Thread(target=client_handler, args=(c, self, ), daemon=True)
+            t.start()
             print(f"There is now {self.get_active()} active connections.")
 
         return 

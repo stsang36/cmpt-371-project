@@ -1,17 +1,9 @@
 import socket
 import json
 import os
+import threading
 
 RECV_SIZE = 1024
-
-
-# perhaps we need to make the client multithreaded to get and send game updates to the server. 
-def send_thread(data):
-    pass
-
-def recv_thread(data):
-    pass
-
 
 class client_connection:
     def __init__(self, socket, ip, port):
@@ -30,6 +22,15 @@ class client_connection:
 
     def receive(self):
         return self.socket.recv(self.recv_size).decode()
+    
+    def start_recieving(self, recv_handler):
+        '''
+        This function will start a thread and listen for any new data to be recieved.
+        Takes in a handler that requires a client_connection object.
+        '''
+        print("Reciever Started...")
+        t = threading.Thread(target=recv_handler, args=(self, ), daemon=True)
+        t.start()
     
     def close(self):
         self.socket.close()
@@ -68,3 +69,4 @@ def init_connection():
     connection = client_connection(s, ip, port)
     return connection
     # return connection
+

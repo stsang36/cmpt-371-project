@@ -1,7 +1,5 @@
 import game_server as gs
 import signal
-import sys
-import socket
 
 server_socket = None
 
@@ -11,14 +9,28 @@ def handle_sigint(sig, frame):
 
 signal.signal(signal.SIGINT, handle_sigint)
 
-# TODO: This function needs to handle any updates sent from the client. The handler must take a client class and a connection class.
-def handle_client(client, conn):
+def handle_client(client: gs.client, conn: gs.server_connection):
+    '''
+    Function that each thread will run to handle a client connection. It will send an update to all clients.
+    Requires: a client class and a server_connection class.
+
+    MAKE SURE TO USE A MUTEX TO AVOID RACE CONDITIONS! This will modify the global gamestate after processing and updating the clients.
+    '''
     try:
         while True:
             data = client.receive()
             print(data)
 
-            client.send("back at you!")
+            if not data:
+                break
+
+            with conn.clients_lock:
+
+                for aClient in conn.clients:
+                    if aClient != client:
+                        aClient.send(f"{client.id}:{data}")
+            
+            client.send("Data received by server.")
 
     except Exception as e:
         print(f"Client Error: {e}")
