@@ -6,7 +6,25 @@ import threading
 RECV_SIZE = 1024
 
 class client_connection:
+    '''
+    Client connection class requires the following:
+        - ID
+        - socket object
+        - Client IP
+        - Client Port
+    Methods:
+        Printing the object itself will display the IP:PORT and ID.
+        .send(data) will encode and send the data from the parameter to the server in the socket object.
+        .receive() will decode and return the data to the caller.
+        .close() will close the client connection.
+        .start_receiving(recv_handler) will start a thread to listen for incoming data and call the provided handler.
+        .set_id(new_id) will set the ID of the client connection.
+        .get_id() will return the ID of the client connection.
+    '''
+
+
     def __init__(self, socket, ip, port):
+        self.id = None
         self.socket = socket
         self.recv_size = RECV_SIZE
         self.ip = ip
@@ -21,7 +39,7 @@ class client_connection:
         self.socket.sendall(data)
 
     def receive(self):
-        return self.socket.recv(self.recv_size).decode()
+        return self.socket.recv(self.recv_size)
     
     def start_recieving(self, recv_handler):
         '''
@@ -35,8 +53,22 @@ class client_connection:
     def close(self):
         self.socket.close()
 
-# Load the configuration from config.json
+    def set_id(self, new_id):
+        self.id = new_id
+        print(f"Client ID set to: {self.id}")
+    
+    def get_id(self):
+        return self.id
+    
+
+
 def load_config():
+    '''
+    Load the configuration from config.json in the same directory as this file.
+
+    We might change it so that ip and port are passed as arguments to the init_connection function.
+    '''
+
     config_path = os.path.join(os.path.dirname(__file__), 'config.json')
 
     if not os.path.exists(config_path):
@@ -46,8 +78,10 @@ def load_config():
         return json.load(file)
     
 
-# Initiate a connection using the server IP and port from config.json. Opens A TCP socket and returns the socket object.
 def init_connection():
+    '''
+    Initiate a connection using the server IP and port from config.json. Opens A TCP socket and returns the socket object.
+    '''
     config = load_config()
     ip = config["server_ip"]
     port = config["server_port"]
@@ -68,5 +102,3 @@ def init_connection():
     
     connection = client_connection(s, ip, port)
     return connection
-    # return connection
-

@@ -1,9 +1,15 @@
 import game_server as gs
 import signal
+import sys, os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from shared import packet
 
 server_socket = None
 
 def handle_sigint(sig, frame):
+    '''
+    Handles the SIGINT shut down the server because it would not be able to interrupt while waiting for clients.
+    '''
     if server_socket is not None:
         server_socket.close()
 
@@ -16,6 +22,13 @@ def handle_client(client: gs.client, conn: gs.server_connection):
 
     MAKE SURE TO USE A MUTEX TO AVOID RACE CONDITIONS! This will modify the global gamestate after processing and updating the clients.
     '''
+
+    #send UUID at initial connection between client and server.
+    print(f"Sending UUID: {client.id}")
+    client.send(str(client.id).encode())
+
+
+
     try:
         while True:
             data = client.receive()
@@ -24,14 +37,17 @@ def handle_client(client: gs.client, conn: gs.server_connection):
             if not data:
                 break
 
+            unloaded_data = packet.unload_packet(data)
+            
+            #testing whether the packet was unloaded correctly
+            print(f"Unloaded Data: {unloaded_data}")
+
             with conn.clients_lock:
 
                 for aClient in conn.clients:
                     if aClient != client:
-                        aClient.send(f"{client.id}:{data}")
-            
-            client.send("Data received by server.")
-
+                        aClient.send(data)
+        
     except Exception as e:
         print(f"Client Error: {e}")
     finally:

@@ -44,7 +44,7 @@ class client:
     
     def receive(self):
         '''.recieve() will decode and return the data to the caller.'''
-        return self.conn.recv(RECV_SIZE).decode()
+        return self.conn.recv(RECV_SIZE)
     
     def close(self):
         '''.close() will close the client connection and remove itself from the clients list.'''
