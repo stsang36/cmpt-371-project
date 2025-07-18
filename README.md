@@ -15,7 +15,7 @@ This is a client-server multiplayer game. A maximum of 4 players and a minimum o
 
 Assuming Python and GIT are installed, clone this repository into a folder of your choosing:
 ```
-git clone <Repo Link you obtained from the green code button> 
+git clone git@github.com:stsang36/cmpt-371-project.git 
 ```
 
 OR Download as ZIP and extract.
@@ -52,6 +52,8 @@ A client window will now appear and you can connect to the server and begin play
 # How to play:
 
 Placeholder.
+
+# Author(s):
 
 
 
