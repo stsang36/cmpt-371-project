@@ -120,7 +120,8 @@ class Ball:
         self.yFac = -1
         self.ball = pygame.draw.circle(
             screen, self.color, (self.posx, self.posy), self.radius)
-        self.firstTime = 1
+        self.beenHit = 0
+        self.lastHit = 0
 
     def display(self):
         self.ball = pygame.draw.circle(
@@ -130,26 +131,24 @@ class Ball:
         self.posx += self.speed*self.xFac
         self.posy += self.speed*self.yFac
 
-        # If the ball hits the top or bottom surfaces, 
-        # then the sign of yFac is changed and 
+        # If the ball hits the surfaces, 
+        # with no players hiting it
         # it results in a reflection
-        #if self.posy <= 0 or self.posy >= HEIGHT:
-            #self.yFac *= -1
+        if self.posy <= 0 or self.posy >= HEIGHT:
+            self.yFac *= -1
+        if self.posx <= 0 or self.posx >= WIDTH:
+            self.xFac *= -1
 
         # Hit on strikers
 
-        if self.posx <= 0 and self.firstTime:
-            self.firstTime = 0
-            return 1
-        elif self.posx >= WIDTH and self.firstTime:
-            self.firstTime = 0
-            return -1
-        elif self.posy <= 0 and self.firstTime:
-            self.firstTime = 0
-            return 2
-        elif self.posy >= HEIGHT and self.firstTime:
-            self.firstTime = 0
-            return -2
+        if self.posx <= 0 and self.beenHit:
+            return self.lastHit
+        elif self.posx >= WIDTH and self.beenHit:
+            return self.lastHit
+        elif self.posy <= 0 and self.beenHit:
+            return self.lastHit
+        elif self.posy >= HEIGHT and self.beenHit:
+            return self.lastHit
         else:
             return 0
 
@@ -157,14 +156,31 @@ class Ball:
         self.posx = WIDTH//2
         self.posy = HEIGHT//2
         self.xFac *= -1
-        self.firstTime = 1
+        self.beenHit = 0
+        self.lastHit = 0
 
     # Used to reflect the ball along the X-axis
     def hitX(self):
+        # Update beenHit bool to true
+        self.beenHit = 1
+
+        # Check wich VertiStriker hit
+        if self.posx < WIDTH/2:
+            self.lastHit = 1 # geek1
+        else:
+            self.lastHit = 2 # geek2
         self.xFac *= -1
 
     # Used to reflect the ball along the Y-axis
     def hitY(self):
+        # Update beenHit bool to true
+        self.beenHit = 1
+
+        # Check wich HoriStriker hit
+        if self.posy < HEIGHT/2:
+            self.lastHit = 3 # geek3
+        else:
+            self.lastHit = 4 # geek4
         self.yFac *= -1
 
     def getRect(self):
@@ -239,16 +255,18 @@ def main():
         geek4.update(geek4XFac)
         point = ball.update()
 
-        # -1 -> Geek_1 has scored
-        # +1 -> Geek_2 has scored
+        # 1 -> Geek_1 has scored
+        # 2 -> Geek_2 has scored
+        # 3 -> Geek_3 has scored
+        # 4 -> Geek_4 has scored
         #  0 -> None of them scored
-        if point == -1:
+        if point == 1:
             geek1Score += 1
-        elif point == 1:
-            geek2Score += 1
         elif point == 2:
+            geek2Score += 1
+        elif point == 3:
             geek3Score += 1
-        elif point == -2:
+        elif point == 4:
             geek4Score += 1
 
         # Someone has scored
