@@ -53,7 +53,8 @@ try:
     
     c.start_recieving(recv_handler)
     
-    # send a test packet MOVE for every 5 seconds
+    #Run pong game
+    # for now, just a bar moving
     player = striker(pong_setup.WIDTH-20, 0, 10, 100, 10, pong_setup.GREEN)
     running = True
     move = 0
@@ -65,18 +66,14 @@ try:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_UP:
                     move = -1
-                    data = {'uuid': c.get_id(), 'x': 0, 'y': -1}
-                    sendMovement(c, data)
                 if event.key == pygame.K_DOWN:
                     move = 1
-                    data = {'uuid': c.get_id(), 'x': 0, 'y': 1}
-                    sendMovement(c, data)
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
                     move = 0
-                    data = {'uuid': c.get_id(), 'x': 0, 'y': 0}
-                    sendMovement(c, data)
         player.update(move)
+        data = {'uuid': c.get_id(), 'x': player.posx, 'y': player.posy}
+        sendMovement(c, data)
         player.display()
         pygame.display.update()
         pong_setup.clock.tick(pong_setup.FPS)
