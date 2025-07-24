@@ -21,7 +21,7 @@ class Status(Enum):
     END = '-'
     BALL_POS = 'B'
     START = '+'
-
+    PLAYER_NEW_SLOT = 'N'
 
 def serialize(data, s: Status):
     '''
@@ -46,6 +46,10 @@ def serialize(data, s: Status):
             return struct.pack("!cff", Status.BALL_POS.value.encode(), data["x"], data["y"] )
         case Status.END:
             return struct.pack("!c36s", Status.END.value.encode(), data["uuid"].encode())
+        case Status.START:
+            return struct.pack("!c36s", Status.START.value.encode(), data["uuid"].encode())
+        case Status.PLAYER_NEW_SLOT:
+            return struct.pack("!c36sH", Status.PLAYER_NEW_SLOT.value.encode(), data["uuid"].encode(), data["slot"])
         case _:
             raise ValueError("Unknown type.")
         
@@ -78,6 +82,9 @@ def unload_packet(recieved):
         case Status.START:
             uuid, = struct.unpack("!36s", recieved[1:])
             return {'status': Status.START, 'uuid': uuid.decode()}
+        case Status.PLAYER_NEW_SLOT:
+            uuid, slot = struct.unpack("!36sH", recieved[1:])
+            return {'status': Status.PLAYER_NEW_SLOT, 'uuid': uuid.decode(), 'slot': slot}
         
         case _:
             raise ValueError("Unknown packet type.")
