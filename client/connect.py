@@ -60,6 +60,14 @@ class client_connection:
     def get_id(self):
         return self.id
     
+    def set_player_slot(self, slot):
+        '''
+        Set the player slot for this client.
+        This is used to identify which player this client is controlling.
+        '''
+        self.player_slot = slot
+        print(f"Player slot set to: {self.player_slot}")
+    
 
 
 def load_config():

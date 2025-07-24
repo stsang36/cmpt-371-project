@@ -3,6 +3,7 @@ import json
 import os
 import uuid
 import threading
+import game_track as gt
 
 RECV_SIZE = 1024
 SOCKET_TIMEOUT = 1
@@ -53,6 +54,10 @@ class client:
         with client_lock:
             clients.remove(self)
         print(f"Client disconnected: {self.ip}:{self.port}")
+
+    def get_id(self):
+        '''.get_id() will return the ID of the client connection.'''
+        return self.id
         
 
 class server_connection:
@@ -77,6 +82,7 @@ class server_connection:
         self.port = port
         self.clients = clients
         self.clients_lock = client_lock
+        self.game_state = gt.Game_State() 
 
 
     def get_active(self):
@@ -119,10 +125,19 @@ class server_connection:
 
         return 
     
-    def update_clients(self):
+    def update_clients(self, data=None):
         #TODO: Implement a function that sends updates via a different threads that monitor game changes. 
         # Im not sure if we need a queue for this, or handle client will send changes immediately and do it for us. 
-        pass
+            
+        if not data:
+            raise ValueError("No data to send to clients.")
+        if not self.clients:
+            raise Exception ("No clients connected to send data to.")
+        
+
+        with self.clients_lock:
+            for aClient in self.clients:
+                aClient.send(data)
     
     
     def close(self):
