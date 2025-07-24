@@ -130,7 +130,7 @@ class server_connection:
         # Im not sure if we need a queue for this, or handle client will send changes immediately and do it for us. 
             
         if not data:
-            raise ValueError("No data to send to clients.")
+            raise ValueError(f"No data to send to clients.")
         if not self.clients:
             raise Exception ("No clients connected to send data to.")
         

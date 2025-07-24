@@ -20,6 +20,8 @@ class Position(Enum):
     TOP = 'T'
     BOTTOM = 'B'
 
+
+
 class Game_State:
     '''
     The Game State object contains the following:
@@ -117,12 +119,12 @@ class Game_State:
                     raise ValueError(f"Player {new_id} already exists.")
             
 
-            for slot in self.players.values():
+            for key, slot in self.players.items():
                 if slot.id is None:
                     slot.id = new_id
                     slot.x = x
                     slot.y = y
-                    return slot
+                    return key
         
         return None
 

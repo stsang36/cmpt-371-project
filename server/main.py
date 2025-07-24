@@ -7,7 +7,7 @@ import threading
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from shared import packet
 
-BALL_UPDATE_INTERVAL = 0.05 
+BALL_UPDATE_INTERVAL = 1 
 
 server_socket = None
 
@@ -34,16 +34,18 @@ def handle_client(client: gs.client, conn: gs.server_connection):
     client.send(str(client.id).encode())
 
     #add new player to the game state
-    player_slot = conn.game_state.add_player(client.id)
+    player_slot = conn.game_state.add_player(str(client.id))
+
+
 
     if player_slot is None:
-        print(f"Failed to add player {client.id} to game state.")
+        print(f"Failed to add player {str(client.id)} to game state.")
         client.close()
         return
     
-    print(f"Player {client.id} added to slot {player_slot}.")
+    print(f"Player {str(client.id)} added to slot {player_slot}.")
 
-    new_send = packet.serialize({"uuid": client.id, "slot": player_slot}, packet.Status.PLAYER_NEW_SLOT)
+    new_send = packet.serialize({"uuid": str(client.id), "slot": int(player_slot[1:])}, packet.Status.PLAYER_NEW_SLOT)
     try:
         conn.update_clients(new_send)
     except Exception as e:
@@ -64,7 +66,7 @@ def handle_client(client: gs.client, conn: gs.server_connection):
             #testing whether the packet was unloaded correctly
             print(f"Unloaded Data: {unloaded_data}")
 
-            status = unloaded_data["status"]
+            status = packet.Status(unloaded_data["status"])
             to_send = None
             with conn.game_state.game_lock:
                 
@@ -72,10 +74,10 @@ def handle_client(client: gs.client, conn: gs.server_connection):
                     case packet.Status.MOVE:
 
                         for player in conn.game_state.players.values():
-                            if player.id == client.id:
+                            if player.id == str(client.id):
                                 # Update the player's position
                                 player.update(unloaded_data["x"], unloaded_data["y"])
-                                to_send = packet.serialize({"uuid": client.id, "x": player.x, "y": player.y}, packet.Status.MOVE)
+                                to_send = packet.serialize({"uuid": str(client.id), "x": player.x, "y": player.y}, packet.Status.MOVE)
                    
                     case packet.Status.PAUSE:
                         conn.game_state.pause()

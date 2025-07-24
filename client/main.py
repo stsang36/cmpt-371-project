@@ -42,6 +42,8 @@ try:
     id = c.receive().decode()
     c.set_id(id)
     print(f"Connected with ID: {id}")
+    player_slot = packet.unload_packet(c.receive())
+    print(f"Player Slot: {player_slot}")
 
     c.start_recieving(recv_handler)
     
