@@ -143,6 +143,11 @@ class Game_State:
         with self.game_lock:
             self.ended = False
 
+    def is_paused(self):
+        with self.game_lock:
+            return self.paused
+    
+
 
     
 
