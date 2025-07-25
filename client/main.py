@@ -38,11 +38,8 @@ def recv_handler(conn: connect.client_connection):
     conn.close()
 
 #send data
-def sendData(c, data, status):
-    if status == 'M':
-        p = packet.serialize(data, packet.Status.MOVE)
-    if status == 'B':
-        p = packet.serialize(data, packet.Status.BALL_POS)
+def sendData(c, data):
+    p = packet.serialize(data, packet.Status.MOVE)
     c.send(p)
 
 try:
@@ -78,22 +75,12 @@ try:
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
                     move = 0
-        #collision detection
-        if pygame.Rect.colliderect(ball.getRect(), player.getRect()):
-            ball.hitX()
         #update ball and player position
         player.update(move)
-        point = ball.update()
-        #send data to the server
-        if point:   
-            ball.reset()
         #send player's position and ball's position to the server
         data = {'uuid': c.get_id(), 'x': player.posx, 'y': player.posy}
-        ballData =  {'uuid': c.get_id(), 'x': ball.posx, 'y': ball.posy}
-        sendData(c, data, 'M')
-        sendData(c, ballData, 'B')
+        sendData(c, data)
         player.display()
-        ball.display()
         pygame.display.update()
         pong_setup.clock.tick(pong_setup.FPS)
     pygame.quit()
