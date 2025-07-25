@@ -42,10 +42,14 @@ class Game_State:
             
 
         '''
-        def __init__ (self, x=0.0, y=0.0):
+        def __init__ (self, x=0.0, y=0.0, xFac = 1, yFac = 1, WIDTH = 900, HEIGHT = 600):
             self.x = x
             self.y = y
+            self.xFac = xFac
+            self.yFac = yFac
             self.side = Side.NONE
+            self.WIDTH = WIDTH
+            self.HEIGHT = HEIGHT
             
 
         def __str__(self):
@@ -55,10 +59,16 @@ class Game_State:
             '''
             Updates the ball position and side.
             '''
-            self.x = x
-            self.y = y
+            self.x += self.xFac * 5
+            self.y += self.yFac * 5
             self.side = side
+            self.hitWall()
 
+        def hitWall(self):
+            if self.y <= 0 or self.y >= self.HEIGHT:
+                self.yFac *= -1
+            if self.x <= 0 or self.x >= self.WIDTH:
+                self.xFac *= -1
         def get_side(self):
             return self.side
     
