@@ -6,7 +6,6 @@ import pong_setup
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from shared import packet
 from Striker import striker
-from ball import Ball
 
 # perhaps we need to make the client multithreaded to get and send game updates to the server. 
 def send_thread(data):
