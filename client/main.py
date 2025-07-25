@@ -57,8 +57,8 @@ try:
     c.start_recieving(recv_handler)
     
     #Run pong game
-    player = striker(pong_setup.WIDTH-20, 0, 10, 100, 10, pong_setup.GREEN)
-    Ball = ball(pong_setup.WIDTH//2, pong_setup.HEIGHT//2, 7, 5, pong_setup.WHITE)
+    player = striker(20, 0, 10, 100, 10, pong_setup.GREEN)
+    Ball = ball(pong_setup.WIDTH/2, pong_setup.HEIGHT/2, 7, 5, pong_setup.WHITE)
     running = True
     move = 0
     #event handling

@@ -108,14 +108,11 @@ def ball_updater_thread(conn: gs.server_connection):
     game_state = conn.game_state
 
     #TODO: BALL LOGIC HERE
-    WIDTH, HEIGHT = 900, 600
-    new_pos = (WIDTH//2, HEIGHT//2)
     new_side = gt.Side.NONE
 
     while True:
         with game_state.game_lock:
-            game_state.ball.update(new_pos[0], new_pos[1], new_side)
-            new_pos = (game_state.ball.x, game_state.ball.y)
+            game_state.ball.update(players = game_state.players)
             # Optionally: broadcast ball position to clients
             to_send = packet.serialize({"x": game_state.ball.x,"y": game_state.ball.y}, packet.Status.BALL_POS)
 
