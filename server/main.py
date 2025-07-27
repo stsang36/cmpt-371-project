@@ -7,7 +7,7 @@ import threading
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from shared import packet
 
-BALL_UPDATE_INTERVAL = 1 
+BALL_UPDATE_INTERVAL = 0.03 
 
 server_socket = None
 
@@ -108,16 +108,14 @@ def ball_updater_thread(conn: gs.server_connection):
     game_state = conn.game_state
 
     #TODO: BALL LOGIC HERE
-
-    new_pos = (0.0, 0.0)
     new_side = gt.Side.NONE
 
     while True:
-        with game_state.game_lock:
-
+        with game_state.game_lock:            
             if not game_state.is_paused():
 
-                game_state.ball.update(new_pos[0], new_pos[1], new_side)
+
+               game_state.ball.update(players = game_state.players)
 
                 # Optionally: broadcast ball position to clients
                 to_send = packet.serialize({"x": game_state.ball.x,"y": game_state.ball.y}, packet.Status.BALL_POS)

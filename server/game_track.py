@@ -42,22 +42,75 @@ class Game_State:
             
 
         '''
-        def __init__ (self, x=0.0, y=0.0):
+        def __init__ (self, x = 450, y = 300, xFac = 1, yFac = 1, WIDTH = 900, HEIGHT = 600, paddle_width = 10, paddle_height = 100):
             self.x = x
             self.y = y
+            self.xFac = xFac
+            self.yFac = yFac
             self.side = Side.NONE
-            
-
+            self.WIDTH = WIDTH
+            self.HEIGHT = HEIGHT
+            self.paddle_width = paddle_width
+            self.paddle_height = paddle_height
         def __str__(self):
             return f"Ball at position ({self.x}, {self.y}, {self.side})"
         
-        def update(self, x: float, y: float, side: Side=Side.NONE):
+        def update(self, players = None):
             '''
             Updates the ball position and side.
             '''
-            self.x = x
-            self.y = y
-            self.side = side
+            self.x += self.xFac * 5
+            self.y += self.yFac * 5
+            self.hitWall()
+            if players:
+                self.hitPlayer(players)
+
+        #if the ball hit the wall, it results into reflection
+        def hitWall(self):
+            if self.y <= 0 or self.y >= self.HEIGHT:
+                self.yFac *= -1
+            if self.x <= 0 or self.x >= self.WIDTH:
+                self.xFac *= -1
+        #If it hit the paddle, it result into reflection and change side of the ball
+        def hitPlayer(self, players: dict):
+            '''
+            Checks if the ball has hit any player.
+            If it hits, reflect the ball and optionally change its direction slightly.
+            '''
+            for player in players.values():
+                match player.position:
+                    case Position.LEFT:
+                        if (self.x <= player.x + self.paddle_width and
+                            self.x >= player.x and
+                            player.y <= self.y <= player.y + self.paddle_height):
+                            self.xFac *= -1
+                            self.side = Side.LEFT
+                            return player.id
+                    
+                    case Position.RIGHT:
+                        if (self.x + 5 >= player.x and
+                            self.x <= player.x + self.paddle_width and
+                            player.y <= self.y <= player.y + self.paddle_height):
+                            self.xFac *= -1
+                            self.side = Side.RIGHT
+                            return player.id
+
+                    case Position.TOP:
+                        if (self.y <= player.y + self.paddle_width and
+                            self.y >= player.y and
+                            player.x <= self.x <= player.x + self.paddle_height):
+                            self.yFac *= -1
+                            self.side = Side.LEFT
+                            return player.id
+
+                    case Position.BOTTOM:
+                        if (self.y + 5 >= player.y and
+                            self.y <= player.y + self.paddle_width and
+                            player.x <= self.x <= player.x + self.paddle_height):
+                            self.yFac *= -1
+                            self.side = Side.RIGHT
+                            return player.id
+            return None
 
         def get_side(self):
             return self.side
