@@ -115,12 +115,12 @@ def ball_updater_thread(conn: gs.server_connection):
             if not game_state.is_paused():
 
 
-               game_state.ball.update(players = game_state.players)
+                game_state.ball.update(players = game_state.players)
 
-                # Optionally: broadcast ball position to clients
+               # Optionally: broadcast ball position to clients
                 to_send = packet.serialize({"x": game_state.ball.x,"y": game_state.ball.y}, packet.Status.BALL_POS)
 
-                #TODO: GAME LOGIC TO QUALIFY A WINNER HERE, call game_state.end() if a player has won.
+               #TODO: GAME LOGIC TO QUALIFY A WINNER HERE, call game_state.end() if a player has won.
 
                 try:
                     conn.update_clients(to_send)
