@@ -180,6 +180,22 @@ class Game_State:
                     return key
         
         return None
+    
+    def remove_player(self, remove_id: str) -> Optional[str]:
+        '''
+        Removes a player from the game state.
+        '''
+        with self.game_lock:
+                for player in self.players.values():
+                    if player.id == remove_id:
+
+                        player.id = None
+                        player.x = 0.0
+                        player.y = 0.0
+                        
+                        return
+
+        return None
 
 
 
@@ -195,6 +211,11 @@ class Game_State:
     def end(self):
         with self.game_lock:
             self.ended = False
+
+    def is_paused(self):
+        with self.game_lock:
+            return self.paused
+    
 
 
     

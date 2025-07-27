@@ -111,17 +111,38 @@ def ball_updater_thread(conn: gs.server_connection):
     new_side = gt.Side.NONE
 
     while True:
-        with game_state.game_lock:
-            game_state.ball.update(players = game_state.players)
-            # Optionally: broadcast ball position to clients
-            to_send = packet.serialize({"x": game_state.ball.x,"y": game_state.ball.y}, packet.Status.BALL_POS)
+        with game_state.game_lock:            
+            if not game_state.is_paused():
 
-            try:
-                conn.update_clients(to_send)
-            except Exception as e:
-                print(f"Ball Exception: {e}")
+
+               game_state.ball.update(players = game_state.players)
+
+                # Optionally: broadcast ball position to clients
+                to_send = packet.serialize({"x": game_state.ball.x,"y": game_state.ball.y}, packet.Status.BALL_POS)
+
+                #TODO: GAME LOGIC TO QUALIFY A WINNER HERE, call game_state.end() if a player has won.
+
+                try:
+                    conn.update_clients(to_send)
+                except Exception as e:
+                    print(f"Ball Exception: {e}")
+            
+            if game_state.ended:
+                print("Game has ended.")
+                to_end = packet.serialize({"winner": game_state.ball.side}, packet.Status.END)
+                
+                try:
+                    conn.update_clients(to_end)
+                except Exception as e:
+                    print(f"Error sending END packet: {e}")
+
+                break
 
         time.sleep(BALL_UPDATE_INTERVAL)
+    
+    
+
+
 
 def main():
 
