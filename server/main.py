@@ -7,7 +7,8 @@ import threading
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from shared import packet
 
-BALL_UPDATE_INTERVAL = 0.03 
+BALL_UPDATE_INTERVAL = 0.03
+IDLE_TIME = 1
 
 server_socket = None
 
@@ -51,12 +52,11 @@ def handle_client(client: gs.client, conn: gs.server_connection):
     except Exception as e:
         print(f"Error Sending New player: {e}")
 
+    client.ready_up()
 
     try:
         while True:
             data = client.receive()
-            print(data)
-
             if not data:
                 # the client has disconnected.
                 break
@@ -96,6 +96,7 @@ def handle_client(client: gs.client, conn: gs.server_connection):
         print(f"Client Error: {e}")
     finally:
         client.close()
+        conn.game_state.remove_player(str(client.id))
         print(f"There is now {conn.get_active()} active connections.")
 
     pass
@@ -111,22 +112,22 @@ def ball_updater_thread(conn: gs.server_connection):
     new_side = gt.Side.NONE
 
     while True:
-        with game_state.game_lock:            
-            if not game_state.is_paused():
-
-
+    
+                    
+        if not game_state.is_paused() and conn.get_active() > 0:
+            with game_state.game_lock:
                 game_state.ball.update(players = game_state.players)
 
-               # Optionally: broadcast ball position to clients
+                # Optionally: broadcast ball position to clients
                 to_send = packet.serialize({"x": game_state.ball.x,"y": game_state.ball.y}, packet.Status.BALL_POS)
 
-               #TODO: GAME LOGIC TO QUALIFY A WINNER HERE, call game_state.end() if a player has won.
+                #TODO: GAME LOGIC TO QUALIFY A WINNER HERE, call game_state.end() if a player has won.
 
                 try:
                     conn.update_clients(to_send)
                 except Exception as e:
                     print(f"Ball Exception: {e}")
-            
+        
             if game_state.ended:
                 print("Game has ended.")
                 to_end = packet.serialize({"winner": game_state.ball.side}, packet.Status.END)
@@ -138,7 +139,10 @@ def ball_updater_thread(conn: gs.server_connection):
 
                 break
 
-        time.sleep(BALL_UPDATE_INTERVAL)
+        if game_state.is_paused() or conn.get_active() < 1:
+            time.sleep(IDLE_TIME)
+        else:
+            time.sleep(BALL_UPDATE_INTERVAL)
     
     
 

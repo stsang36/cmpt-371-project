@@ -31,6 +31,7 @@ class client:
         self.conn = conn
         self.ip = ip
         self.port = port
+        self.ready = False
 
     def __str__(self):
         return f"Client connected: {self.ip}:{self.port} ID: {self.id}"
@@ -43,7 +44,7 @@ class client:
 
     
     
-    def receive(self):
+    def receive(self) -> bytes:
         '''.recieve() will decode and return the data to the caller.'''
         return self.conn.recv(RECV_SIZE)
     
@@ -53,11 +54,19 @@ class client:
 
         with client_lock:
             clients.remove(self)
+
         print(f"Client disconnected: {self.ip}:{self.port}")
 
-    def get_id(self):
+    def get_id(self) -> str:
         '''.get_id() will return the ID of the client connection.'''
         return self.id
+    
+    def ready_up(self):
+        '''.ready_up() will set the client as ready after getting the initial info.'''
+        self.ready = True
+    
+    def is_ready(self) -> bool:
+        return self.ready
         
 
 class server_connection:
@@ -137,7 +146,12 @@ class server_connection:
 
         with self.clients_lock:
             for aClient in self.clients:
-                aClient.send(data)
+
+                if aClient.is_ready():
+                    try:
+                        aClient.send(data)
+                    except socket.error as e:
+                        print(f"Error sending data to client {aClient.id}: {e}")
     
     
     def close(self):

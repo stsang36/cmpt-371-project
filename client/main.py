@@ -24,7 +24,7 @@ def recv_handler(conn: connect.client_connection):
 
         try:
             data = conn.receive()
-            if not data:
+            if not data or len(data) < 8:
                 break
 
             unloaded_data = packet.unload_packet(data)
@@ -32,7 +32,7 @@ def recv_handler(conn: connect.client_connection):
 
         except Exception as e:
             print(f"Socket Error: {e}")
-            break
+            
         
 
     conn.close()

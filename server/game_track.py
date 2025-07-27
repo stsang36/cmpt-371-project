@@ -161,6 +161,9 @@ class Game_State:
         self.game_lock = threading.Lock()
         self.paused = False
         self.ended = False
+
+    def __str__(self):
+        return f"({self.ball.x}, {self.ball.y}, paused: {self.paused}), players: {self.players}"
     
     def add_player(self, new_id:str, x=0.0, y=0.0,):
         '''
