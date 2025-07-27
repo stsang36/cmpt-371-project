@@ -32,10 +32,21 @@ def handle_client(client: gs.client, conn: gs.server_connection):
 
     #send UUID at initial connection between client and server.
     print(f"Sending UUID: {client.id}")
-    client.send(str(client.id).encode())
-
+    try:
+        client.send(str(client.id).encode())
+    except Exception as e:
+        print(f"Error sending UUID to client: {e}")
+        client.close()
+        return
+    
     #add new player to the game state
-    player_slot = conn.game_state.add_player(str(client.id))
+
+    try:
+        player_slot = conn.game_state.add_player(str(client.id))
+    except ValueError as e:
+        print(f"Error adding player: {e}")
+        client.close()
+        return
 
 
 
@@ -64,7 +75,7 @@ def handle_client(client: gs.client, conn: gs.server_connection):
             unloaded_data = packet.unload_packet(data)
             
             #testing whether the packet was unloaded correctly
-            print(f"Unloaded Data: {unloaded_data}")
+            #print(f"Unloaded Data: {unloaded_data}")
 
             status = packet.Status(unloaded_data["status"])
             to_send = None
@@ -124,6 +135,7 @@ def ball_updater_thread(conn: gs.server_connection):
                 #TODO: GAME LOGIC TO QUALIFY A WINNER HERE, call game_state.end() if a player has won.
 
                 try:
+                    #print(f"Sending Ball Position: {game_state.ball.x}, {game_state.ball.y}")
                     conn.update_clients(to_send)
                 except Exception as e:
                     print(f"Ball Exception: {e}")

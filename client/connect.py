@@ -2,6 +2,9 @@ import socket
 import json
 import os
 import threading
+import sys, os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import shared.packet as packet
 
 RECV_SIZE = 1024
 
@@ -29,14 +32,17 @@ class client_connection:
         self.recv_size = RECV_SIZE
         self.ip = ip
         self.port = port
+        self.player_slot = None
+
 
     def __str__(self):
         return f"Client Connected to server at {self.ip}:{self.port}"
 
-    def send(self, data):
-        if isinstance(data, str):
-            data = data.encode()
-        self.socket.sendall(data)
+    def send(self, data, STATUS: packet.Status):
+        
+        packet_data = packet.serialize(data, STATUS)
+        self.socket.sendall(packet_data)
+
 
     def receive(self):
         return self.socket.recv(self.recv_size)
@@ -67,8 +73,6 @@ class client_connection:
         '''
         self.player_slot = slot
         print(f"Player slot set to: {self.player_slot}")
-    
-
 
 def load_config():
     '''
@@ -101,6 +105,7 @@ def init_connection():
 
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         s.connect((ip, port))
     except socket.error as e:
         print(e)

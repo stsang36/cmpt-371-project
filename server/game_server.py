@@ -55,7 +55,7 @@ class client:
         with client_lock:
             clients.remove(self)
 
-        print(f"Client disconnected: {self.ip}:{self.port}")
+        print(f"Client disconnected: {self.ip}:{self.port} ID: {self.id}")
 
     def get_id(self) -> str:
         '''.get_id() will return the ID of the client connection.'''
@@ -152,6 +152,7 @@ class server_connection:
                         aClient.send(data)
                     except socket.error as e:
                         print(f"Error sending data to client {aClient.id}: {e}")
+                        aClient.close()  # This will remove the client from the list
     
     
     def close(self):
@@ -189,6 +190,7 @@ def init_host():
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         s.bind((ip, port))
         s.listen() 
         

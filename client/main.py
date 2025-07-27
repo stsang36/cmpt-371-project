@@ -8,6 +8,8 @@ from shared import packet
 from Striker import striker
 from Ball import ball
 
+IDLE_TIME = 1
+
 # perhaps we need to make the client multithreaded to get and send game updates to the server. 
 def send_thread(data):
     pass
@@ -28,7 +30,17 @@ def recv_handler(conn: connect.client_connection):
                 break
 
             unloaded_data = packet.unload_packet(data)
-            print(f"Received Data: {unloaded_data}")
+            #print(f"Received Data: {unloaded_data}")
+            status = packet.Status(unloaded_data["status"])
+            if status == packet.Status.BALL_POS:
+                x = unloaded_data["x"]
+                y = unloaded_data["y"]
+                if isinstance(x, (int, float)) and isinstance(y, (int, float)):
+                    Ball.posx = float(x)
+                    Ball.posy = float(y)
+                else:
+                    continue
+
 
         except Exception as e:
             print(f"Socket Error: {e}")
@@ -37,10 +49,6 @@ def recv_handler(conn: connect.client_connection):
 
     conn.close()
 
-#send data
-def sendData(c, data):
-    p = packet.serialize(data, packet.Status.MOVE)
-    c.send(p)
 
 try:
     c = connect.init_connection()
@@ -64,17 +72,6 @@ try:
     #event handling
     while running:
         pong_setup.screen.fill(pong_setup.BLACK)
-        data = c.receive()
-        unloaded_data = packet.unload_packet(data)
-        status = packet.Status(unloaded_data["status"])
-        if status == packet.Status.BALL_POS:
-            x = unloaded_data["x"]
-            y = unloaded_data["y"]
-            if isinstance(x, (int, float)) and isinstance(y, (int, float)):
-                Ball.posx = float(x)
-                Ball.posy = float(y)
-            else:
-                continue
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -91,7 +88,9 @@ try:
         player.update(move)
         #send player's position and ball's position to the server
         data = {'uuid': c.get_id(), 'x': player.posx, 'y': player.posy}
-        sendData(c, data)
+        
+        c.send(data, packet.Status.MOVE)
+            
         player.display()
         Ball.display()
         pygame.display.update()

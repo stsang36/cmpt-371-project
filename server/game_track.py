@@ -169,10 +169,19 @@ class Game_State:
         '''
         Adds a player to the game state.
         '''
+        MAX_PLAYERS = 4
+
         with self.game_lock:
+            count = 0
             for player in self.players.values():
                 if player.id == new_id:
                     raise ValueError(f"Player {new_id} already exists.")
+                if player.id is not None:
+                    count += 1
+            
+            if count >= MAX_PLAYERS:
+                raise ValueError(f"Maximum number of players {MAX_PLAYERS} reached.")
+        
             
 
             for key, slot in self.players.items():
@@ -196,6 +205,7 @@ class Game_State:
                         player.x = 0.0
                         player.y = 0.0
                         
+                        print(f"Player {remove_id} removed from game state.")
                         return
 
         return None
