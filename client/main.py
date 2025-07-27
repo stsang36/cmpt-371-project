@@ -68,8 +68,13 @@ try:
         unloaded_data = packet.unload_packet(data)
         status = packet.Status(unloaded_data["status"])
         if status == packet.Status.BALL_POS:
-            Ball.posx = unloaded_data["x"]
-            Ball.posy = unloaded_data["y"]
+            x = unloaded_data["x"]
+            y = unloaded_data["y"]
+            if isinstance(x, (int, float)) and isinstance(y, (int, float)):
+                Ball.posx = float(x)
+                Ball.posy = float(y)
+            else:
+                continue
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
