@@ -1,5 +1,5 @@
 import struct
-from enum import IntEnum, auto, Enum
+from enum import Enum
 
 class Status(Enum):
     '''
@@ -22,6 +22,7 @@ class Status(Enum):
     BALL_POS = 'B'
     START = '+'
     PLAYER_NEW_SLOT = 'N'
+    PLAYER_LIST = 'L'
 
 def serialize(data, s: Status):
     '''
@@ -48,6 +49,13 @@ def serialize(data, s: Status):
             return struct.pack("!c36s", Status.START.value.encode(), data["uuid"].encode())
         case Status.PLAYER_NEW_SLOT:
             return struct.pack("!c36sH", Status.PLAYER_NEW_SLOT.value.encode(), data["uuid"].encode(), data["slot"])
+        case Status.PLAYER_LIST:
+            return struct.pack("!c36s36s36s36s", Status.PLAYER_LIST.value.encode(), 
+                                data["p1"].encode(), 
+                                data["p2"].encode(),
+                                data["p3"].encode(), 
+                                data["p4"].encode()
+                              )
         case _:
             raise ValueError("Unknown type.")
         
@@ -83,6 +91,15 @@ def unload_packet(recieved):
         case Status.PLAYER_NEW_SLOT:
             uuid, slot = struct.unpack("!36sH", recieved[1:])
             return {'status': Status.PLAYER_NEW_SLOT, 'uuid': uuid.decode(), 'slot': slot}
+        case Status.PLAYER_LIST:
+            p1, p2, p3, p4 = struct.unpack("!36s36s36s36s", recieved[1:])
+            return {
+                'status': Status.PLAYER_LIST,
+                'p1': p1.decode().strip('\x00'),
+                'p2': p2.decode().strip('\x00'),
+                'p3': p3.decode().strip('\x00'),
+                'p4': p4.decode().strip('\x00')
+            }
         
         case _:
             raise ValueError("Unknown packet type.")

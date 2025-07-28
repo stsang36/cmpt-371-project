@@ -5,6 +5,7 @@ import threading
 import sys, os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import shared.packet as packet
+from typing import Optional
 
 RECV_SIZE = 1024
 
@@ -33,6 +34,15 @@ class client_connection:
         self.ip = ip
         self.port = port
         self.player_slot = None
+        self.player_list: dict[str, dict[str, object]] = {
+        '1': {'player': None, 'uuid': None},
+        '2': {'player': None, 'uuid': None},
+        '3': {'player': None, 'uuid': None},
+        '4': {'player': None, 'uuid': None},
+        }
+
+        self.player_list_lock = threading.Lock()
+
 
 
     def __str__(self):

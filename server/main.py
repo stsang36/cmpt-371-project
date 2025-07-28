@@ -59,11 +59,16 @@ def handle_client(client: gs.client, conn: gs.server_connection):
 
     new_send = packet.serialize({"uuid": str(client.id), "slot": int(player_slot[1:])}, packet.Status.PLAYER_NEW_SLOT)
     try:
-        conn.update_clients(new_send)
+        client.send(new_send)
+        print(f"Sent new player slot to all clients: {new_send}")
     except Exception as e:
         print(f"Error Sending New player: {e}")
 
+
+    
+
     client.ready_up()
+    conn.send_player_list()
 
     try:
         while True:
@@ -75,7 +80,7 @@ def handle_client(client: gs.client, conn: gs.server_connection):
             unloaded_data = packet.unload_packet(data)
             
             #testing whether the packet was unloaded correctly
-            #print(f"Unloaded Data: {unloaded_data}")
+            print(f"Unloaded Data: {unloaded_data}")
 
             status = packet.Status(unloaded_data["status"])
             to_send = None
@@ -139,6 +144,7 @@ def ball_updater_thread(conn: gs.server_connection):
                     conn.update_clients(to_send)
                 except Exception as e:
                     print(f"Ball Exception: {e}")
+                
         
             if game_state.ended:
                 print("Game has ended.")

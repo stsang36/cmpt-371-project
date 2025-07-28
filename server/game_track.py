@@ -209,6 +209,13 @@ class Game_State:
                         return
 
         return None
+    
+    def get_player_list(self):
+        '''
+        Returns a list of players with empty slots too.
+        '''
+        with self.game_lock:
+            return self.players
 
 
 

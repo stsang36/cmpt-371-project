@@ -39,7 +39,10 @@ class striker:
         elif self.posy + self.height >= pong_setup.HEIGHT:
             self.posy = pong_setup.HEIGHT-self.height
 
-        # Updating the rect with the new values
+    def updatePos(self):
+        '''
+        Update the position of the striker using server data.
+        '''
         self.geekRect = (self.posx, self.posy, self.width, self.height)
 
     # Used to render the score on to the screen
