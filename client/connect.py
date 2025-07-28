@@ -51,11 +51,23 @@ class client_connection:
     def send(self, data, STATUS: packet.Status):
         
         packet_data = packet.serialize(data, STATUS)
-        self.socket.sendall(packet_data)
-
+        self.socket.sendall(packet_data + b'\n')  
 
     def receive(self):
-        return self.socket.recv(self.recv_size)
+
+        buff = b''
+        while True:
+            d = self.socket.recv(self.recv_size)
+
+            if not d:
+                raise ConnectionError("Connection closed.")
+            buff += d
+            if b'\n' in buff:
+                full_data, buff = buff.split(b'\n', 1)
+                return full_data
+            
+            if len(buff) >= self.recv_size:
+                return buff
     
     def start_recieving(self, recv_handler):
         '''
@@ -67,7 +79,8 @@ class client_connection:
         t.start()
     
     def close(self):
-        self.socket.close()
+        with self.player_list_lock:
+            self.socket.close()
 
     def set_id(self, new_id):
         self.id = new_id

@@ -40,15 +40,32 @@ class client:
     
     def send(self, data):
         '''.send(data) will encode and send the data from the paramater to the server in the server_connection object.'''
+        
         if isinstance(data, str):
             data = data.encode()
-        self.conn.sendall(data)
+        self.conn.sendall(data + b'\n')
 
     
     
     def receive(self) -> bytes:
-        '''.recieve() will decode and return the data to the caller.'''
-        return self.conn.recv(RECV_SIZE)
+        '''
+        .receive() will decode and return the data to the caller.
+        Returns a dictionary with the status and the data.
+        '''
+        buff = b''
+        while True:
+            d = self.conn.recv(RECV_SIZE)
+            
+            if not d:
+                raise ConnectionError("Connection closed.")
+            buff += d
+            
+            if b'\n' in buff:
+                full_data, buff = buff.split(b'\n', 1)
+                return full_data
+            
+            if len(buff) >= RECV_SIZE:
+                return buff        
     
     def close(self):
         '''.close() will close the client connection and remove itself from the clients list.'''
