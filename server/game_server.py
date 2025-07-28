@@ -1,9 +1,11 @@
 import socket
 import json
-import os
+import os, sys
 import uuid
 import threading
 import game_track as gt
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import shared.packet as packet
 
 RECV_SIZE = 1024
 SOCKET_TIMEOUT = 1
@@ -50,10 +52,11 @@ class client:
     
     def close(self):
         '''.close() will close the client connection and remove itself from the clients list.'''
-        self.conn.close()
 
         with client_lock:
             clients.remove(self)
+            self.ready = False
+            self.conn.close()
 
         print(f"Client disconnected: {self.ip}:{self.port} ID: {self.id}")
 
@@ -63,7 +66,8 @@ class client:
     
     def ready_up(self):
         '''.ready_up() will set the client as ready after getting the initial info.'''
-        self.ready = True
+        with client_lock:
+            self.ready = True
     
     def is_ready(self) -> bool:
         return self.ready
@@ -152,8 +156,25 @@ class server_connection:
                         aClient.send(data)
                     except socket.error as e:
                         print(f"Error sending data to client {aClient.id}: {e}")
-                        aClient.close()  # This will remove the client from the list
-    
+                        aClient.close()
+
+    def send_player_list(self):
+        ''' sends the player list to all clients. '''
+        player_list = self.game_state.get_player_list()
+        data = packet.serialize({
+            "p1": player_list["p1"].id or "",
+            "p2": player_list["p2"].id or "",
+            "p3": player_list["p3"].id or "",
+            "p4": player_list["p4"].id or ""
+        }, packet.Status.PLAYER_LIST)
+
+        try: 
+            self.update_clients(data)
+        except Exception as e:
+            print(f"Error sending player list: {e}")
+            return
+        
+        print(f"sent player list to all clients: {data}")
     
     def close(self):
         self.socket.close()
