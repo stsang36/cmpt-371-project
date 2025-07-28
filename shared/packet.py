@@ -70,6 +70,7 @@ def unload_packet(recieved):
     if not recieved:
         raise ValueError("No Data was provided!")
     
+    
     # Check the first byte to determine the packet type
     s = Status(struct.unpack("!c", recieved[:1])[0].decode())
 

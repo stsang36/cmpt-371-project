@@ -27,8 +27,12 @@ def recv_handler(conn: connect.client_connection):
 
         try:
             data = conn.receive()
-            if not data or len(data) < 8:
+
+            if not data:
                 break
+
+            if len(data) < 8:
+                continue
 
             unloaded_data = packet.unload_packet(data)
             #print(f"Received Data: {unloaded_data}")
