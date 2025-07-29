@@ -1,7 +1,8 @@
 import pygame
 import pong_setup
-
 class striker:
+
+
     
     # Take the initial position,
     # dimensions, speed and color of the object
@@ -17,7 +18,7 @@ class striker:
         self.geekRect = pygame.Rect(posx, posy, width, height)
         # Object that is blit on the screen
         self.geek = pygame.draw.rect(pong_setup.screen, self.color, self.geekRect)
-
+        
     # Used to display the object on the screen
     def display(self):
         self.geek = pygame.draw.rect(pong_setup.screen, self.color, self.geekRect)
@@ -27,7 +28,7 @@ class striker:
     # if yFac == -1 ==> The object is moving upwards
     # if yFac == 1 ==> The object is moving downwards
     # if yFac == 0 ==> The object is not moving
-    def update(self, yFac):
+    def updateVert(self, yFac):
         self.posy = self.posy + self.speed*yFac
 
         # Restricting the striker to be below
@@ -38,6 +39,16 @@ class striker:
         # the bottom surface of the screen
         elif self.posy + self.height >= pong_setup.HEIGHT:
             self.posy = pong_setup.HEIGHT-self.height
+    
+    def updateHori(self, xFac):
+        self.posx = self.posx + self.speed*xFac
+
+        # Restricting the striker to be left of the left surface of the screen
+        if self.posx <= 0:
+            self.posx = 0
+        # Restricting the striker to be right of the right surface of the screen
+        elif self.posx + self.width >= pong_setup.WIDTH:
+            self.posx = pong_setup.WIDTH-self.width
 
     def updatePos(self):
         '''

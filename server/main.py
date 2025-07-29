@@ -113,6 +113,7 @@ def handle_client(client: gs.client, conn: gs.server_connection):
     finally:
         client.close()
         conn.game_state.remove_player(str(client.id))
+        conn.send_player_list()
         print(f"There is now {conn.get_active()} active connections.")
 
     pass
