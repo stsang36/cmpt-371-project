@@ -182,10 +182,12 @@ try:
         
         with c.player_list_lock:
             for s, i in c.player_list.items():
-
                 if i['uuid'] != "":
                     p = cast(striker, i['player'])
                     p.display()
+
+                    if i['uuid'] == c.get_id():
+                        p.display(is_current_player=True)
 
         Ball.display()
         pygame.display.update()

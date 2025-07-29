@@ -20,9 +20,11 @@ class striker:
         self.geek = pygame.draw.rect(pong_setup.screen, self.color, self.geekRect)
         
     # Used to display the object on the screen
-    def display(self):
+    def display(self, is_current_player=False):
         self.geek = pygame.draw.rect(pong_setup.screen, self.color, self.geekRect)
 
+        if is_current_player:
+            pygame.draw.rect(pong_setup.screen, (255, 255, 0), self.geekRect, width=3)
     # Used to update the state of the object
     # yFac represents the direction of the striker movement
     # if yFac == -1 ==> The object is moving upwards
