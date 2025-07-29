@@ -9,6 +9,7 @@ from shared import packet
 
 BALL_UPDATE_INTERVAL = 0.03
 IDLE_TIME = 1
+PLAYER_LIST_UPDATE_INTERVAL = 2
 
 server_socket = None
 
@@ -113,6 +114,7 @@ def handle_client(client: gs.client, conn: gs.server_connection):
     finally:
         client.close()
         conn.game_state.remove_player(str(client.id))
+        conn.send_player_list()
         print(f"There is now {conn.get_active()} active connections.")
 
     pass
@@ -162,7 +164,20 @@ def ball_updater_thread(conn: gs.server_connection):
         else:
             time.sleep(BALL_UPDATE_INTERVAL)
     
-    
+def player_list_updater_thread(conn: gs.server_connection):
+    '''
+    This thread will update the player list every 5 seconds.
+    '''
+    while True:
+        
+        try:
+            if conn.get_active() > 0:
+                conn.send_player_list()
+        except Exception as e:
+            print(f"Error sending player list: {e}")
+            break
+        
+        time.sleep(PLAYER_LIST_UPDATE_INTERVAL)
 
 
 
@@ -173,6 +188,8 @@ def main():
 
     signal.signal(signal.SIGINT, handle_sigint)
 
+    ball_t = None
+    player_list_t = None
 
     try:
         c = gs.init_host()
@@ -180,6 +197,8 @@ def main():
         print(c)
         ball_t = threading.Thread(target=ball_updater_thread, args=(c, ), daemon=True)
         ball_t.start()
+        player_list_t = threading.Thread(target=player_list_updater_thread, args=(c, ), daemon=True)
+        player_list_t.start()
 
         c.accept_clients(handle_client) # this is a blocking call.
 

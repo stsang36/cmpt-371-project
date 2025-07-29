@@ -106,6 +106,11 @@ try:
     
     c.player_slot = current_slot["slot"]
     print(f"Player Slot: {c.player_slot}")
+
+    if c.player_slot in [1, 2]:
+        is_vertical = True
+    else:
+        is_vertical = False
     
     c.start_recieving(recv_handler)
 
@@ -117,13 +122,20 @@ try:
     
     #Run pong game
 
-
-    player1 = striker(20, 0, 10, 100, 10, pong_setup.GREEN)
-    player2 = striker(pong_setup.WIDTH - 30, 0, 10, 100, 10, pong_setup.RED)
-
+    # vertical strikers
+    player1 = striker(20, (pong_setup.HEIGHT / 2) - 50, 10, 100, 10, pong_setup.GREEN)
+    player2 = striker(pong_setup.WIDTH - 30, (pong_setup.HEIGHT / 2) - 50, 10, 100, 10, pong_setup.RED)
+    
+    # horizontal strikers
+    player3 = striker((pong_setup.WIDTH/2)-50, 20, 100, 10, 10, pong_setup.GREEN)
+    player4 = striker((pong_setup.WIDTH/2)-50, pong_setup.HEIGHT-30, 100, 10, 10, pong_setup.RED)
+    
     with c.player_list_lock:
         c.player_list["1"]["player"] = player1
         c.player_list["2"]["player"] = player2
+        c.player_list["3"]["player"] = player3
+        c.player_list["4"]["player"] = player4
+
 
         my_player = c.player_list[str(c.player_slot)]["player"]
     
@@ -139,16 +151,30 @@ try:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_UP:
-                    move = -1
-                if event.key == pygame.K_DOWN:
-                    move = 1
-            if event.type == pygame.KEYUP:
-                if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
-                    move = 0
+
+            if is_vertical:
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_UP:
+                        move = -1
+                    if event.key == pygame.K_DOWN:
+                        move = 1
+                if event.type == pygame.KEYUP:
+                    if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
+                        move = 0
+            else:
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_RIGHT:
+                        move = 1
+                    if event.key == pygame.K_LEFT:
+                        move = -1
+                if event.type == pygame.KEYUP:
+                    if event.key == pygame.K_RIGHT or event.key == pygame.K_LEFT:
+                        move = 0
         #update ball and player position
-        my_player.update(move)
+        if is_vertical:
+            my_player.updateVert(move)
+        else:
+            my_player.updateHori(move)
         #send player's position and ball's position to the server
         data = {'uuid': c.get_id(), 'x': my_player.posx, 'y': my_player.posy}
         
@@ -156,9 +182,12 @@ try:
         
         with c.player_list_lock:
             for s, i in c.player_list.items():
-                if i['player'] is not None:
+                if i['uuid'] != "":
                     p = cast(striker, i['player'])
                     p.display()
+
+                    if i['uuid'] == c.get_id():
+                        p.display(is_current_player=True)
 
         Ball.display()
         pygame.display.update()
