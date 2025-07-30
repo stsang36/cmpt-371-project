@@ -3,6 +3,8 @@ import threading
 from typing import Optional
 import random
 
+MAX_PLAYERS = 4
+
 class Side(Enum):
     '''
     Represents the side of the game.
@@ -197,6 +199,11 @@ class Game_State:
         self.game_lock = threading.Lock()
         self.paused = False
         self.ended = False
+        self.scoreboard = {
+            "upper_score": 0,
+            "lower_score": 0
+        }
+
 
     def __str__(self):
         return f"({self.ball.x}, {self.ball.y}, paused: {self.paused}), players: {self.players}"
@@ -205,7 +212,7 @@ class Game_State:
         '''
         Adds a player to the game state.
         '''
-        MAX_PLAYERS = 4
+        
 
         with self.game_lock:
             count = 0
@@ -253,6 +260,20 @@ class Game_State:
         with self.game_lock:
             return self.players
 
+    def get_scoreboard(self):
+        '''
+        Returns the scoreboard.
+        '''
+        with self.game_lock:
+            return self.scoreboard
+        
+    def update_scoreboard(self, upper_score: int, lower_score: int):
+        '''
+        Updates the scoreboard.
+        '''
+        with self.game_lock:
+            self.scoreboard["upper_score"] = upper_score
+            self.scoreboard["lower_score"] = lower_score
 
 
 
