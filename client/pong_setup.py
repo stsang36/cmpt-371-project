@@ -20,3 +20,10 @@ pygame.display.set_caption("Pong")
 # Used to adjust the frame rate
 clock = pygame.time.Clock()
 FPS = 30
+
+def displayText(text, score, x, y, color):
+    text = font20.render(text+str(score), True, color)
+    textRect = text.get_rect()
+    textRect.center = (x, y)
+    
+    screen.blit(text, textRect)

@@ -1,7 +1,9 @@
-
 from enum import Enum
 import threading
 from typing import Optional
+import random
+
+MAX_PLAYERS = 4
 
 class Side(Enum):
     '''
@@ -55,6 +57,17 @@ class Game_State:
         def __str__(self):
             return f"Ball at position ({self.x}, {self.y}, {self.side})"
         
+        def reset(self):
+            '''
+            Resets the ball to the center with a random direction.
+            '''
+            self.x = self.WIDTH / 2
+            self.y = self.HEIGHT / 2
+            self.side = Side.NONE
+            # Random direction: choose xFac and yFac as either -1 or 1
+            self.xFac = random.choice([-1, 1])
+            self.yFac = random.choice([-1, 1])
+        
         def update(self, players = None):
             '''
             Updates the ball position and side.
@@ -67,48 +80,73 @@ class Game_State:
 
         #if the ball hit the wall, it results into reflection
         def hitWall(self):
-            if self.y <= 0 or self.y >= self.HEIGHT:
-                self.yFac *= -1
-            if self.x <= 0 or self.x >= self.WIDTH:
-                self.xFac *= -1
+            '''
+            Checks if the ball hits any edge. If it hits any edge after a paddle hit, reset the ball.
+            Otherwise, reflect the ball for top/bottom edges (if no prior paddle hit).
+            '''
+            if self.y <= 0 or self.y >= self.HEIGHT or self.x <= 0 or self.x >= self.WIDTH:
+                if self.side in [Side.LEFT, Side.RIGHT]:
+                    self.reset()
+                else:
+                    if self.y <= 0 or self.y >= self.HEIGHT:
+                        self.yFac *= -1
+                    if self.x <= 0 or self.x >= self.WIDTH:
+                        self.xFac *= -1
+        
         #If it hit the paddle, it result into reflection and change side of the ball
         def hitPlayer(self, players: dict):
             '''
-            Checks if the ball has hit any player.
-            If it hits, reflect the ball and optionally change its direction slightly.
+            Checks if the ball has hit any player's paddle inner surface.
+            If it hits, reflect the ball and update last touched player.
+            Only counts hits on the inner surfaces of paddles.
             '''
-            for player in players.values():
+            for player_slot, player in players.items():
+                if player.id is None:  # Skip empty slots
+                    continue
+                    #made changes to only count hits on the inner surfaces of paddles (#todo:Cornercases to be tested)
                 match player.position:
                     case Position.LEFT:
+                        # Only count hits on the right surface (inner surface) of left paddle
                         if (self.x <= player.x + self.paddle_width and
                             self.x >= player.x and
-                            player.y <= self.y <= player.y + self.paddle_height):
+                            player.y <= self.y <= player.y + self.paddle_height and
+                            self.xFac < 0):  # Ball must be moving left to hit inner surface
                             self.xFac *= -1
                             self.side = Side.LEFT
+                            self.last_touched_player = player_slot
                             return player.id
                     
                     case Position.RIGHT:
+                        # Only count hits on the left surface (inner surface) of right paddle
                         if (self.x + 5 >= player.x and
                             self.x <= player.x + self.paddle_width and
-                            player.y <= self.y <= player.y + self.paddle_height):
+                            player.y <= self.y <= player.y + self.paddle_height and
+                            self.xFac > 0):  # Ball must be moving right to hit inner surface
                             self.xFac *= -1
                             self.side = Side.RIGHT
+                            self.last_touched_player = player_slot
                             return player.id
 
                     case Position.TOP:
+                        # Only count hits on the bottom surface (inner surface) of top paddle
                         if (self.y <= player.y + self.paddle_width and
                             self.y >= player.y and
-                            player.x <= self.x <= player.x + self.paddle_height):
+                            player.x <= self.x <= player.x + self.paddle_height and
+                            self.yFac < 0):  # Ball must be moving up to hit inner surface
                             self.yFac *= -1
-                            self.side = Side.LEFT
+                            self.side = Side.LEFT  # You might want to adjust this logic
+                            self.last_touched_player = player_slot
                             return player.id
 
                     case Position.BOTTOM:
+                        # Only count hits on the top surface (inner surface) of bottom paddle
                         if (self.y + 5 >= player.y and
                             self.y <= player.y + self.paddle_width and
-                            player.x <= self.x <= player.x + self.paddle_height):
+                            player.x <= self.x <= player.x + self.paddle_height and
+                            self.yFac > 0):  # Ball must be moving down to hit inner surface
                             self.yFac *= -1
-                            self.side = Side.RIGHT
+                            self.side = Side.RIGHT  # You might want to adjust this logic
+                            self.last_touched_player = player_slot
                             return player.id
             return None
 
@@ -161,6 +199,11 @@ class Game_State:
         self.game_lock = threading.Lock()
         self.paused = False
         self.ended = False
+        self.scoreboard = {
+            "upper_score": 0,
+            "lower_score": 0
+        }
+
 
     def __str__(self):
         return f"({self.ball.x}, {self.ball.y}, paused: {self.paused}), players: {self.players}"
@@ -169,7 +212,7 @@ class Game_State:
         '''
         Adds a player to the game state.
         '''
-        MAX_PLAYERS = 4
+        
 
         with self.game_lock:
             count = 0
@@ -217,6 +260,20 @@ class Game_State:
         with self.game_lock:
             return self.players
 
+    def get_scoreboard(self):
+        '''
+        Returns the scoreboard.
+        '''
+        with self.game_lock:
+            return self.scoreboard
+        
+    def update_scoreboard(self, upper_score: int, lower_score: int):
+        '''
+        Updates the scoreboard.
+        '''
+        with self.game_lock:
+            self.scoreboard["upper_score"] = upper_score
+            self.scoreboard["lower_score"] = lower_score
 
 
 

@@ -23,6 +23,7 @@ class Status(Enum):
     START = '+'
     PLAYER_NEW_SLOT = 'N'
     PLAYER_LIST = 'L'
+    SCOREBOARD = 'P'
 
 def serialize(data, s: Status):
     '''
@@ -56,6 +57,8 @@ def serialize(data, s: Status):
                                 data["p3"].encode(), 
                                 data["p4"].encode()
                               )
+        case Status.SCOREBOARD:
+            return struct.pack("!cii", Status.SCOREBOARD.value.encode(), data["upper_score"], data["lower_score"])
         case _:
             raise ValueError("Unknown type.")
         
@@ -101,7 +104,15 @@ def unload_packet(recieved):
                 'p3': p3.decode().strip('\x00'),
                 'p4': p4.decode().strip('\x00')
             }
+        case Status.SCOREBOARD:
+            upper_score, lower_score = struct.unpack("!ii", recieved[1:])
+            return {
+                'status': Status.SCOREBOARD, 
+                'upper_score': upper_score, 
+                'lower_score': lower_score
+            }
         
+
         case _:
             raise ValueError("Unknown packet type.")
 
