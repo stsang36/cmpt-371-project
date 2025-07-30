@@ -204,6 +204,7 @@ class server_connection:
         if not curr_scoreboard:
             raise ValueError("GAME_STATE ERROR: No scoreboard to send.")
         
+
         data = packet.serialize({
             "upper_score": curr_scoreboard["upper_score"],
             "lower_score": curr_scoreboard["lower_score"]
@@ -211,12 +212,11 @@ class server_connection:
 
         try:
             self.update_clients(data)
+           
         except Exception as e:
             print(f"Error sending scoreboard: {e}")
             return
         
-        print(f"Sent scoreboard to all clients")
-
 
     def close(self):
         self.socket.close()

@@ -82,8 +82,11 @@ def recv_handler(conn: connect.client_connection):
                         conn.player_list["3"]["uuid"] = p3
                         conn.player_list["4"]["uuid"] = p4
                 case packet.Status.SCOREBOARD:
+                    upper_score = unloaded_data["upper_score"]
+                    lower_score = unloaded_data["lower_score"]
                     
-
+                    if isinstance(upper_score, int) and isinstance(lower_score, int):
+                        conn.update_scoreboard(upper_score, lower_score)
 
         except Exception as e:
             print(f"Socket Error: {e}")
@@ -192,6 +195,11 @@ try:
                         p.display(is_current_player=True)
 
         Ball.display()
+
+        with c.scoreboard_lock:
+            pong_setup.displayText("Score:", c.scoreboard['upper_score'], pong_setup.WIDTH//2, 20, pong_setup.WHITE)
+            pong_setup.displayText("Score:", c.scoreboard['lower_score'], pong_setup.WIDTH//2, pong_setup.HEIGHT - 20, pong_setup.WHITE)
+
         pygame.display.update()
         pong_setup.clock.tick(pong_setup.FPS)
     pygame.quit()

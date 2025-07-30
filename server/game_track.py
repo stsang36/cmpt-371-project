@@ -9,8 +9,8 @@ class Side(Enum):
     '''
     Represents the side of the game.
     '''
-    LEFT = 'L'
-    RIGHT = 'R'
+    UPPER = 'u'
+    LOWER = 'l'
     NONE = 'N'
 
 class Position(Enum):
@@ -44,7 +44,7 @@ class Game_State:
             
 
         '''
-        def __init__ (self, x = 450, y = 300, xFac = 1, yFac = 1, WIDTH = 900, HEIGHT = 600, paddle_width = 10, paddle_height = 100):
+        def __init__ (self, x = 450, y = 300, xFac = 1, yFac = 1, WIDTH = 900, HEIGHT = 600, paddle_width = 10, paddle_height = 100, scoreboard_ref = None):
             self.x = x
             self.y = y
             self.xFac = xFac
@@ -54,6 +54,9 @@ class Game_State:
             self.HEIGHT = HEIGHT
             self.paddle_width = paddle_width
             self.paddle_height = paddle_height
+            self.scoreboard_ref = scoreboard_ref
+
+
         def __str__(self):
             return f"Ball at position ({self.x}, {self.y}, {self.side})"
         
@@ -67,6 +70,25 @@ class Game_State:
             # Random direction: choose xFac and yFac as either -1 or 1
             self.xFac = random.choice([-1, 1])
             self.yFac = random.choice([-1, 1])
+
+        def score(self, side: Side):
+
+            print(f"Scoring for side: {side}")
+
+            curr_scoreboard = self.scoreboard_ref
+            
+            if curr_scoreboard is None:
+                raise ValueError("Scoreboard reference is not set.")
+            
+            if side == Side.UPPER:
+                print("upper player scored!")
+                curr_scoreboard["upper_score"] += 1
+            elif side == Side.LOWER:
+                print("lower player scored!")
+                curr_scoreboard["lower_score"] += 1
+            
+            print(f"Scoreboard updated: {self.scoreboard_ref}")
+            
         
         def update(self, players = None):
             '''
@@ -85,7 +107,8 @@ class Game_State:
             Otherwise, reflect the ball for top/bottom edges (if no prior paddle hit).
             '''
             if self.y <= 0 or self.y >= self.HEIGHT or self.x <= 0 or self.x >= self.WIDTH:
-                if self.side in [Side.LEFT, Side.RIGHT]:
+                if self.side in [Side.UPPER, Side.LOWER]:
+                    self.score(self.side)
                     self.reset()
                 else:
                     if self.y <= 0 or self.y >= self.HEIGHT:
@@ -93,7 +116,6 @@ class Game_State:
                     if self.x <= 0 or self.x >= self.WIDTH:
                         self.xFac *= -1
         
-        #If it hit the paddle, it result into reflection and change side of the ball
         def hitPlayer(self, players: dict):
             '''
             Checks if the ball has hit any player's paddle inner surface.
@@ -112,7 +134,7 @@ class Game_State:
                             player.y <= self.y <= player.y + self.paddle_height and
                             self.xFac < 0):  # Ball must be moving left to hit inner surface
                             self.xFac *= -1
-                            self.side = Side.LEFT
+                            self.side = Side.UPPER
                             self.last_touched_player = player_slot
                             return player.id
                     
@@ -123,7 +145,7 @@ class Game_State:
                             player.y <= self.y <= player.y + self.paddle_height and
                             self.xFac > 0):  # Ball must be moving right to hit inner surface
                             self.xFac *= -1
-                            self.side = Side.RIGHT
+                            self.side = Side.LOWER
                             self.last_touched_player = player_slot
                             return player.id
 
@@ -134,7 +156,7 @@ class Game_State:
                             player.x <= self.x <= player.x + self.paddle_height and
                             self.yFac < 0):  # Ball must be moving up to hit inner surface
                             self.yFac *= -1
-                            self.side = Side.LEFT  # You might want to adjust this logic
+                            self.side = Side.UPPER  # You might want to adjust this logic
                             self.last_touched_player = player_slot
                             return player.id
 
@@ -145,7 +167,7 @@ class Game_State:
                             player.x <= self.x <= player.x + self.paddle_height and
                             self.yFac > 0):  # Ball must be moving down to hit inner surface
                             self.yFac *= -1
-                            self.side = Side.RIGHT  # You might want to adjust this logic
+                            self.side = Side.LOWER  # You might want to adjust this logic
                             self.last_touched_player = player_slot
                             return player.id
             return None
@@ -189,12 +211,11 @@ class Game_State:
 
     
     def __init__(self):
-        self.ball = self.Ball()
         self.players = {
-            "p1": self.Player(uuid=None, side=Side.LEFT, position=Position.LEFT),
-            "p2": self.Player(uuid=None, side=Side.RIGHT, position=Position.RIGHT),
-            "p3": self.Player(uuid=None, side=Side.LEFT, position=Position.TOP),
-            "p4": self.Player(uuid=None, side=Side.RIGHT, position=Position.BOTTOM)
+            "p1": self.Player(uuid=None, side=Side.UPPER, position=Position.LEFT),
+            "p2": self.Player(uuid=None, side=Side.LOWER, position=Position.RIGHT),
+            "p3": self.Player(uuid=None, side=Side.UPPER, position=Position.TOP),
+            "p4": self.Player(uuid=None, side=Side.LOWER, position=Position.BOTTOM)
         }
         self.game_lock = threading.Lock()
         self.paused = False
@@ -203,7 +224,7 @@ class Game_State:
             "upper_score": 0,
             "lower_score": 0
         }
-
+        self.ball = self.Ball(scoreboard_ref=self.scoreboard)
 
     def __str__(self):
         return f"({self.ball.x}, {self.ball.y}, paused: {self.paused}), players: {self.players}"
@@ -259,6 +280,7 @@ class Game_State:
         '''
         with self.game_lock:
             return self.players
+
 
     def get_scoreboard(self):
         '''

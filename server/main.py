@@ -81,7 +81,7 @@ def handle_client(client: gs.client, conn: gs.server_connection):
             unloaded_data = packet.unload_packet(data)
             
             #testing whether the packet was unloaded correctly
-            print(f"Unloaded Data: {unloaded_data}")
+            #print(f"Unloaded Data: {unloaded_data}")
 
             status = packet.Status(unloaded_data["status"])
             to_send = None
@@ -105,6 +105,7 @@ def handle_client(client: gs.client, conn: gs.server_connection):
 
             try:
                 conn.update_clients(to_send)
+                conn.send_scoreboard()
             except Exception as e:
                 print(f"Error updating clients: {e}")
 

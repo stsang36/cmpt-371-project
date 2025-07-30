@@ -47,6 +47,7 @@ class client_connection:
         }
 
         self.player_list_lock = threading.Lock()
+        self.scoreboard_lock = threading.Lock()
 
 
 
@@ -101,6 +102,16 @@ class client_connection:
         '''
         self.player_slot = slot
         print(f"Player slot set to: {self.player_slot}")
+
+    def update_scoreboard(self, upper_score: int,  lower_score: int):
+        '''
+        Update the scoreboard.
+        '''
+        with self.scoreboard_lock:
+            if upper_score is not None:
+                self.scoreboard["upper_score"] = upper_score
+            if lower_score is not None:
+                self.scoreboard["lower_score"] = lower_score
 
 def load_config():
     '''

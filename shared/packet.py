@@ -23,7 +23,7 @@ class Status(Enum):
     START = '+'
     PLAYER_NEW_SLOT = 'N'
     PLAYER_LIST = 'L'
-    SCOREBOARD = 'P'
+    SCOREBOARD = 'T'
 
 def serialize(data, s: Status):
     '''
