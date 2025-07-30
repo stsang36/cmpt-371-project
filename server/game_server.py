@@ -112,7 +112,8 @@ class server_connection:
         self.port = port
         self.clients = clients
         self.clients_lock = client_lock
-        self.game_state = gt.Game_State() 
+        self.game_state = gt.Game_State()
+        
 
 
     def get_active(self):
@@ -191,8 +192,32 @@ class server_connection:
             print(f"Error sending player list: {e}")
             return
         
-        print(f"sent player list to all clients: {data}")
-    
+        print(f"sent player list to all clients")
+
+    def send_scoreboard(self):
+        '''
+        Sends the scoreboard to all clients.
+        '''
+
+        curr_scoreboard = self.game_state.get_scoreboard()
+
+        if not curr_scoreboard:
+            raise ValueError("GAME_STATE ERROR: No scoreboard to send.")
+        
+        data = packet.serialize({
+            "upper_score": curr_scoreboard["upper_score"],
+            "lower_score": curr_scoreboard["lower_score"]
+        }, packet.Status.SCOREBOARD)
+
+        try:
+            self.update_clients(data)
+        except Exception as e:
+            print(f"Error sending scoreboard: {e}")
+            return
+        
+        print(f"Sent scoreboard to all clients")
+
+
     def close(self):
         self.socket.close()
 

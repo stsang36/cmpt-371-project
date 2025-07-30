@@ -100,7 +100,7 @@ class HoriStriker:
         text = font20.render(text+str(score), True, color)
         textRect = text.get_rect()
         textRect.center = (x, y)
-
+        
         screen.blit(text, textRect)
 
     def getRect(self):
