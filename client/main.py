@@ -81,6 +81,8 @@ def recv_handler(conn: connect.client_connection):
                         conn.player_list["2"]["uuid"] = p2
                         conn.player_list["3"]["uuid"] = p3
                         conn.player_list["4"]["uuid"] = p4
+                case packet.Status.SCOREBOARD:
+                    
 
 
         except Exception as e:

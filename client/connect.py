@@ -41,6 +41,11 @@ class client_connection:
         '4': {'player': None, 'uuid': None},
         }
 
+        self.scoreboard = {
+            "upper_score": 0,
+            "lower_score": 0
+        }
+
         self.player_list_lock = threading.Lock()
 
 
