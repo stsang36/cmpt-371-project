@@ -1,4 +1,5 @@
 import pygame
+from button import Button
 
 pygame.init()
 
@@ -9,11 +10,13 @@ font20 = pygame.font.Font('freesansbold.ttf', 20)
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 GREEN = (0, 255, 0)
+BLUE = (0, 0, 255, 255)
+RED = (255, 0, 0, 255)
+YELLOW = (255, 255, 0, 255)
 
 # Basic parameters of the screen
 WIDTH, HEIGHT = 900, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Pong")
 
 clock = pygame.time.Clock()    
 FPS = 60
@@ -186,17 +189,20 @@ class Ball:
     def getRect(self):
         return self.ball
 
-# Game Manager
+# Gameplay
 
+def pong():
 
-def main():
+    screen.fill(BLACK)
+    pygame.display.set_caption("Pong")
+
     running = True
 
     # Defining the objects
     geek1 = VertiStriker(20, (HEIGHT/2)-50, 10, 100, 10, GREEN)
-    geek2 = VertiStriker(WIDTH-30, (HEIGHT/2)-50, 10, 100, 10, GREEN)
-    geek3 = HoriStriker((WIDTH/2)-50, 20, 100, 10, 10, GREEN)
-    geek4 = HoriStriker((WIDTH/2)-50, HEIGHT-30, 100, 10, 10, GREEN)
+    geek2 = VertiStriker(WIDTH-30, (HEIGHT/2)-50, 10, 100, 10, BLUE)
+    geek3 = HoriStriker((WIDTH/2)-50, 20, 100, 10, 10, RED)
+    geek4 = HoriStriker((WIDTH/2)-50, HEIGHT-30, 100, 10, 10, YELLOW)
     ball = Ball(WIDTH//2, HEIGHT//2, 7, 5, WHITE)
 
     VertiGeeks = [geek1, geek2]
@@ -293,8 +299,46 @@ def main():
                            geek4Score, WIDTH-100, HEIGHT-30, WHITE)
 
         pygame.display.update()
-        clock.tick(FPS)     
+        clock.tick(FPS)
 
+# Game Manager
+
+
+def main():
+    
+    # First display main menu:
+    
+    pygame.display.set_caption("Menu")
+
+    while True:
+        screen.fill(BLACK)
+    
+        mousePos = pygame.mouse.get_pos()
+
+        menuFont = pygame.font.Font("freesansbold.ttf", 100)
+        menuText = menuFont.render("PONG ROYALE", True, WHITE)
+        menuRect = menuText.get_rect(center=(450, 100))
+
+        buttonFont = pygame.font.Font("freesansbold.ttf", 75)
+        playButton = Button(None, 450, 300, "PLAY", buttonFont, WHITE, GREEN)
+        exitButton = Button(None, 450, 400, "EXIT", buttonFont, WHITE, GREEN)
+
+        screen.blit(menuText, menuRect)
+
+        for button in [playButton, exitButton]:
+            button.changeColour(mousePos[0], mousePos[1])
+            button.update(screen)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if playButton.checkForInput(mousePos[0], mousePos[1]):
+                    pong()
+                if exitButton.checkForInput(mousePos[0], mousePos[1]):
+                    pygame.quit()
+
+        pygame.display.update()
 
 if __name__ == "__main__":
     main()
