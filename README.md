@@ -29,14 +29,14 @@ pip install -r requirements.txt
 OR
 
 Linux:
-pip3 install -r requirements.txt <Linux>
+pip3 install -r requirements.txt
 ```
 
 
 ### Server:
 1. Enter the server directory
    ```cd server```
-2. Open the config.json file with your text editor and assign an IP and PORT. The default is set to listen to 0.0.0.0 with PORT 8000.
+2. Open the config.json file with your text editor and assign an IP and PORT. The default is set to listen to ```0.0.0.0``` with ```PORT 8000```.
 3. Run the server ```python .\main.py``` or ```python3 .\main.py```.
 
 The server will now start listening to new connections on the assigned IP and Port.
