@@ -140,7 +140,7 @@ def ball_updater_thread(conn: gs.server_connection):
                 to_send = packet.serialize({"x": game_state.ball.x,"y": game_state.ball.y}, packet.Status.BALL_POS)
 
                 #TODO: GAME LOGIC TO QUALIFY A WINNER HERE, call game_state.end() if a player has won.
-
+                
                 try:
                     #print(f"Sending Ball Position: {game_state.ball.x}, {game_state.ball.y}")
                     conn.update_clients(to_send)
