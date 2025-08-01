@@ -157,9 +157,7 @@ class server_connection:
         return 
     
     def update_clients(self, data=None):
-        #TODO: Implement a function that sends updates via a different threads that monitor game changes. 
-        # Im not sure if we need a queue for this, or handle client will send changes immediately and do it for us. 
-            
+
         if not data:
             raise ValueError(f"No data to send to clients.")
         if not self.clients:

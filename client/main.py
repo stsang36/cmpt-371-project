@@ -12,18 +12,12 @@ from button import Button
 
 IDLE_TIME = 1
 
-# perhaps we need to make the client multithreaded to get and send game updates to the server. 
-def send_thread(data):
-    pass
-
 def recv_handler(conn: connect.client_connection):
     '''
     This thread handler would take in a client_connection to recieve new updates from the server.
     It should modify and update the game state here on the client side.
     '''
 
-
-    
     while True:
 
         try:
@@ -93,7 +87,7 @@ def recv_handler(conn: connect.client_connection):
 
 
 #main pong game
-def pong():
+def pong(my_player: striker):
     running = True
     move = 0
     #event handling
@@ -249,7 +243,7 @@ try:
             started = True
 
         if ready_to_play:
-            pong()
+            pong(my_player)
             ready_to_play = False
 
 

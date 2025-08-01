@@ -88,19 +88,19 @@ class Game_State:
             if side == Side.UPPER:
                 if hit_top or hit_left:
                     # own goal upper hits top or left side
-                    self.scoreboard_ref["lower_score"] += 1
+                    curr_scoreboard["lower_score"] += 1
                 else:
-                    self.scoreboard_ref["upper_score"] += 1
+                    curr_scoreboard["upper_score"] += 1
 
             elif side == Side.LOWER:
                 if hit_bottom or hit_right:
                     # own goal lower hits bottom or right side
-                    self.scoreboard_ref["upper_score"] += 1
+                    curr_scoreboard["upper_score"] += 1
                     
                 else:
-                    self.scoreboard_ref["lower_score"] += 1
+                    curr_scoreboard["lower_score"] += 1
             
-            print(f"Scoreboard updated: {self.scoreboard_ref}")
+            print(f"Scoreboard updated: {curr_scoreboard}")
             
         
         def update(self, players = None):
