@@ -12,10 +12,10 @@ from button import Button
 
 IDLE_TIME = 1
 
-def recv_handler(conn: connect.client_connection):
+def recv_handler(conn: connect.client_connection) -> None:
     '''
     This thread handler would take in a client_connection to recieve new updates from the server.
-    It should modify and update the game state here on the client side.
+    It should process messages and update the local game state.
     '''
 
     while True:
@@ -85,8 +85,6 @@ def recv_handler(conn: connect.client_connection):
 
     conn.close()
 
-
-#main pong game
 def pong(my_player: striker):
     running = True
     move = 0
@@ -147,7 +145,6 @@ def pong(my_player: striker):
 
 try:
     c = connect.init_connection()
-    
     print(c)
 
     pygame.init()
@@ -158,6 +155,10 @@ try:
 
     current_slot = packet.unload_packet(c.receive())
     
+
+    if not isinstance(current_slot["slot"], int):
+        raise ValueError("Invalid player slot received from server.")
+
     c.player_slot = current_slot["slot"]
     print(f"Player Slot: {c.player_slot}")
 
@@ -185,7 +186,7 @@ try:
     
     my_player = cast(striker, my_player)
 
-    Ball = ball(pong_setup.WIDTH/2, pong_setup.HEIGHT/2, 7, 5, pong_setup.WHITE)
+    Ball = ball(pong_setup.WIDTH/2, pong_setup.HEIGHT/2, 7, pong_setup.WHITE)
     
     c.start_recieving(recv_handler)
 

@@ -28,7 +28,6 @@ def handle_client(client: gs.client, conn: gs.server_connection):
     Function that each thread will run to handle a client connection. It will send an update to all clients.
     Requires: a client class and a server_connection class.
 
-    MAKE SURE TO USE A MUTEX TO AVOID RACE CONDITIONS! This will modify the global gamestate after processing and updating the clients.
     '''
 
     #send UUID at initial connection between client and server.
@@ -40,7 +39,7 @@ def handle_client(client: gs.client, conn: gs.server_connection):
         client.close()
         return
     
-    #add new player to the game state
+    #add new player to the game state and send the new player slot to all clients.
 
     try:
         player_slot = conn.game_state.add_player(str(client.id))
@@ -67,10 +66,11 @@ def handle_client(client: gs.client, conn: gs.server_connection):
 
 
     
-
+    #Ready up the client and send the player list.
     client.ready_up()
     conn.send_player_list()
 
+    #start the client receiving thread.
     try:
         while True:
             data = client.receive()
@@ -85,6 +85,8 @@ def handle_client(client: gs.client, conn: gs.server_connection):
 
             status = packet.Status(unloaded_data["status"])
             to_send = None
+
+            # Handle the different packet statuses
             with conn.game_state.game_lock:
                 
                 match status:
@@ -98,11 +100,13 @@ def handle_client(client: gs.client, conn: gs.server_connection):
                    
                     case packet.Status.PAUSE:
                         conn.game_state.pause()
-                        to_send = packet.serialize({"uuid": client.id}, packet.Status.PAUSE)
+                        to_send = packet.serialize({}, packet.Status.PAUSE)
+
                     case packet.Status.END:
                         conn.game_state.end()
-                        to_send = packet.serialize({"uuid": client.id}, packet.Status.END)
+                        to_send = packet.serialize({"winner": client.id}, packet.Status.END)
 
+            # now send the updated data to all clients and the scoreboard.
             try:
                 conn.update_clients(to_send)
                 conn.send_scoreboard()
@@ -112,6 +116,8 @@ def handle_client(client: gs.client, conn: gs.server_connection):
         
     except Exception as e:
         print(f"Client Error: {e}")
+
+    # handle client disconnection
     finally:
         client.close()
         conn.game_state.remove_player(str(client.id))
@@ -124,17 +130,16 @@ def ball_updater_thread(conn: gs.server_connection):
     '''
     This thread will update the ball position every update_interval seconds.
     broadcast the new position to all clients.
+
+    Requires a server_connection object.
     '''
     game_state = conn.game_state
 
-    while True:
-    
-                    
+    while True:     
         if not game_state.is_paused() and conn.get_active() > 0:
             with game_state.game_lock:
                 game_state.ball.update(players = game_state.players)
 
-                # Optionally: broadcast ball position to clients
                 to_send = packet.serialize({"x": game_state.ball.x,"y": game_state.ball.y}, packet.Status.BALL_POS)
 
                 try:
@@ -154,7 +159,8 @@ def ball_updater_thread(conn: gs.server_connection):
                     print(f"Error sending END packet: {e}")
 
                 break
-
+        
+        # If the game is paused or no clients are connected, wait for a while before checking again.
         if game_state.is_paused() or conn.get_active() < 1:
             time.sleep(IDLE_TIME)
         else:
@@ -164,6 +170,7 @@ def player_list_updater_thread(conn: gs.server_connection):
     '''
     This thread will update the player list every 5 seconds.
     '''
+
     while True:
         
         try:
@@ -182,11 +189,13 @@ def main():
     
     global server_socket
 
+    # SIGNAL HANDLER because the server will not be able to interrupt while waiting for clients.
     signal.signal(signal.SIGINT, handle_sigint)
 
     ball_t = None
     player_list_t = None
 
+    # initialize the socket and threads. 
     try:
         c = gs.init_host()
         server_socket = c.socket
@@ -196,15 +205,14 @@ def main():
         player_list_t = threading.Thread(target=player_list_updater_thread, args=(c, ), daemon=True)
         player_list_t.start()
 
-        c.accept_clients(handle_client) # this is a blocking call.
+        c.accept_clients(handle_client) # this is a blocking call for this thread.
 
 
     except Exception as e:
-        print(e)
+        print(f"Server Exception occured: {e}")
         exit(1)
 
     finally:
-        
         if server_socket is not None:
             server_socket.close()
         print("Server closed.")

@@ -16,6 +16,12 @@ class client_connection:
         - socket object
         - Client IP
         - Client Port
+        - player_slot
+        - player_list, a dict with player slots and their IDs
+        - player_list_lock, mutex lock for player_list
+        - scoreboard, a dict with upper_score and lower_score
+        - scoreboard_lock, mutex lock for scoreboard
+
     Methods:
         Printing the object itself will display the IP:PORT and ID.
         .send(data) will encode and send the data from the parameter to the server in the socket object.
@@ -24,6 +30,11 @@ class client_connection:
         .start_receiving(recv_handler) will start a thread to listen for incoming data and call the provided handler.
         .set_id(new_id) will set the ID of the client connection.
         .get_id() will return the ID of the client connection.
+        .set_player_slot(slot) will set the player slot for this client.
+        .update_scoreboard(upper_score, lower_score) will update the scoreboard.
+        .get_active() will return the number of active clients.
+        .send_player_list() will send the player list to all clients.
+        .send_scoreboard() will send the scoreboard to all clients.
     '''
 
 
@@ -51,15 +62,15 @@ class client_connection:
 
 
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Client Connected to server at {self.ip}:{self.port}"
 
-    def send(self, data, STATUS: packet.Status):
+    def send(self, data, STATUS: packet.Status) -> None:
         
         packet_data = packet.serialize(data, STATUS)
         self.socket.sendall(packet_data + b'\n')  
 
-    def receive(self):
+    def receive(self) -> bytes:
 
         buff = b''
         while True:
@@ -75,7 +86,7 @@ class client_connection:
             if len(buff) >= self.recv_size:
                 return buff
     
-    def start_recieving(self, recv_handler):
+    def start_recieving(self, recv_handler) -> None:
         '''
         This function will start a thread and listen for any new data to be recieved.
         Takes in a handler that requires a client_connection object.
@@ -84,18 +95,18 @@ class client_connection:
         t = threading.Thread(target=recv_handler, args=(self, ), daemon=True)
         t.start()
     
-    def close(self):
+    def close(self) -> None:
         with self.player_list_lock:
             self.socket.close()
 
-    def set_id(self, new_id):
+    def set_id(self, new_id) -> None:
         self.id = new_id
         print(f"Client ID set to: {self.id}")
     
-    def get_id(self):
-        return self.id
+    def get_id(self) -> str:
+        return str(self.id)
     
-    def set_player_slot(self, slot):
+    def set_player_slot(self, slot: Optional[int]) -> None:
         '''
         Set the player slot for this client.
         This is used to identify which player this client is controlling.
@@ -103,7 +114,7 @@ class client_connection:
         self.player_slot = slot
         print(f"Player slot set to: {self.player_slot}")
 
-    def update_scoreboard(self, upper_score: int,  lower_score: int):
+    def update_scoreboard(self, upper_score: int,  lower_score: int) -> None:
         '''
         Update the scoreboard.
         '''
@@ -113,7 +124,7 @@ class client_connection:
             if lower_score is not None:
                 self.scoreboard["lower_score"] = lower_score
 
-def load_config():
+def load_config() -> dict:
     '''
     Load the configuration from config.json in the same directory as this file.
 
@@ -129,7 +140,7 @@ def load_config():
         return json.load(file)
     
 
-def init_connection():
+def init_connection() -> client_connection:
     '''
     Initiate a connection using the server IP and port from config.json. Opens A TCP socket and returns the socket object.
     '''

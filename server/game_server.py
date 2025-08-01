@@ -20,25 +20,30 @@ class client:
         - server_connection object
         - Client IP
         - Client Port
+        - ready bool, used to check if the client is ready to play. Usually set true after the initial connection.
 
     Methods:
         Printing the object itself will display the IP:PORT and ID.
-        .send(data) will encode and send the data from the paramater to the server in the server_connection object. 
-        .recieve() will decode and return the data to the caller.
+        .send(data) will send encoded data to the server.
+        .recieve() will recieve data from the client.
         .close() will close the client connection and remove itself from the clients list.
+        .get_id() will return the ID of the client connection.
+        .ready_up() will set the client as ready.
+        .is_ready() will return the ready status of the client.
 
     '''
-    def __init__(self, new_uuid, conn, ip, port):
+
+    def __init__(self, new_uuid, conn, ip, port) :
         self.id = new_uuid
         self.conn = conn
         self.ip = ip
         self.port = port
         self.ready = False
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Client connected: {self.ip}:{self.port} ID: {self.id}"
     
-    def send(self, data):
+    def send(self, data) -> None:
         '''.send(data) will encode and send the data from the paramater to the server in the server_connection object.'''
         
         if isinstance(data, str):
@@ -67,7 +72,7 @@ class client:
             if len(buff) >= RECV_SIZE:
                 return buff        
     
-    def close(self):
+    def close(self) -> None:
         '''.close() will close the client connection and remove itself from the clients list.'''
 
         with client_lock:
@@ -78,11 +83,9 @@ class client:
         print(f"Client disconnected: {self.ip}:{self.port} ID: {self.id}")
 
     def get_id(self) -> str:
-        '''.get_id() will return the ID of the client connection.'''
         return self.id
     
-    def ready_up(self):
-        '''.ready_up() will set the client as ready after getting the initial info.'''
+    def ready_up(self) -> None:
         with client_lock:
             self.ready = True
     
@@ -96,11 +99,17 @@ class server_connection:
         - A socket when opened.
         - IP
         - Port
+        - client reference list
+        - client lock for the client list.
+        - game_state object to keep track of the game state as defined in game_track.py.
     
     Methods:
+        Printing the object itself will display the IP:PORT and active connections.
         .get_active(), returns active connections
-        .accept_clients(client_handler), starts accepting new clients and have each one run client_handler() 
-        .Printing the object would return the IP:PORT and active connections
+        .accept_clients(client_handler), starts accepting new clients and have each one run client_handler()
+        .update_clients(data), sends data to all clients.
+        .send_player_list(), sends the player list to all clients.
+        .send_scoreboard(), sends the scoreboard to all clients.
         .close(), closes the socket of the server, disconnecting all clients.
 
 
@@ -116,7 +125,7 @@ class server_connection:
         
 
 
-    def get_active(self):
+    def get_active(self) -> int:
         '''Gets a the number of active clients.'''
 
         clients_len = 0
@@ -130,7 +139,7 @@ class server_connection:
         return f"Listening at: {self.ip}:{self.port}, with {self.get_active()} active connections."
     
     
-    def accept_clients(self, client_handler ):
+    def accept_clients(self, client_handler ) -> None:
         ''' .accept_clients() must recieve a handler which contains a server_connection object and a client object.'''
         while True:
             if not self.socket:
@@ -142,7 +151,7 @@ class server_connection:
             except socket.timeout:
                 continue
             except socket.error as e:
-                print(f"Socket Error: {e}")
+                print(f"Socket Accept Error: {e}")
                 raise ConnectionError(f"Failed to accept: {self.ip}:{self.port}.")
             client_id = uuid.uuid4()
             c = client(client_id,client_c, client_addr[0], client_addr[1])
@@ -153,11 +162,10 @@ class server_connection:
             t = threading.Thread(target=client_handler, args=(c, self, ), daemon=True)
             t.start()
             print(f"There is now {self.get_active()} active connections.")
-
-        return 
+ 
     
-    def update_clients(self, data=None):
-
+    def update_clients(self, data=None) -> None:
+        '''.update_clients(data) will send data to all clients.'''
         if not data:
             raise ValueError(f"No data to send to clients.")
         if not self.clients:
@@ -176,7 +184,7 @@ class server_connection:
                     print(f"Error sending data to client {aClient.id}: {e}")
                     aClient.close()
 
-    def send_player_list(self):
+    def send_player_list(self)-> None:
         ''' sends the player list to all clients. '''
         player_list = self.game_state.get_player_list()
         data = packet.serialize({
@@ -192,9 +200,7 @@ class server_connection:
             print(f"Error sending player list: {e}")
             return
         
-        print(f"sent player list to all clients")
-
-    def send_scoreboard(self):
+    def send_scoreboard(self) -> None:
         '''
         Sends the scoreboard to all clients.
         '''
@@ -233,13 +239,13 @@ def load_config():
         return json.load(file)
     
 
-def init_host():
+def init_host() -> server_connection:
     '''
     Initiate a connection using the server IP and port load_config(). Opens A TCP socket and returns the socket object.
     Returns ValueError Exception when the configuration is not loaded correctly.
     Returns ConnectionError Exception if failed during open, bind, and listen stages.
     
-    Returens a server_connection object on success.
+    Returns a server_connection object on success.
     '''
     config = load_config()
     ip = config["host_ip"]

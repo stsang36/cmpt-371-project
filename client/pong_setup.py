@@ -21,7 +21,7 @@ pygame.display.set_caption("Pong")
 clock = pygame.time.Clock()
 FPS = 30
 
-def displayText(text:str, score:int, x:float, y:float, color:tuple[int, int, int]):
+def displayText(text:str, score:int, x:float, y:float, color:tuple[int, int, int]) -> None:
     t = font20.render(text+ " " + str(score), True, color)
     textRect = t.get_rect()
     textRect.center = (x, y)

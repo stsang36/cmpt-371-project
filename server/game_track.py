@@ -28,22 +28,44 @@ class Game_State:
     '''
     The Game State object contains the following:
         - ball: Ball object
-        - players: dictionary of Player objects with keys as player IDs
-        - game_lock: threading lock for synchronizing access to the game state by multiple clients
+        - players: dict of Player objects with keys as player IDs
+        - game_lock: threading lock for game state
+        - paused: boolean indicating if the game is paused
+        - ended: boolean to see if the game has ended
+        - scoreboard: dict that contains the current score of upper and lower sides
+    Methods:
+        - add_player() to add a player to the game state
+        - remove_player() to remove a player from the game state
+        - get_player_list() to get a list of players with empty slots too
+        - get_scoreboard() to get the current scoreboard
+        - update_scoreboard() to update the scoreboard
+
     '''
     class Ball:
         '''
         The Game State Ball object contains the following:
             - x: x pos
             - y: y pos
-            - side: side of the ball (LEFT, RIGHT, NONE)
+            - xFac: x factor
+            - yFac: y factor
+            - WIDTH: width of the game area
+            - HEIGHT: height of the game area
+            - paddle_width: width of the paddle
+            - paddle_height: height of the paddle
+            - scoreboard_ref: reference to the scoreboard
+            - last_touched_player: the player who last touched the ball
 
         Methods:
             - printing the object will return the position and side.
             - update(x, y, side): updates the ball position and side.
-            
-
+            - reset(): resets the ball to the center with a random direction.
+            - score(side, x, y): updates the scoreboard based on the side and position of the ball.
+            - update(players): updates the ball position and checks for collisions.
+            - hitWall(): checks if the ball hits a wall
+            - hitPlayer(players): checks if the ball has hit any player's paddle
+            - get_side(): returns the side of the ball
         '''
+
         def __init__ (self, x = 450, y = 300, xFac = 1, yFac = 1, WIDTH = 900, HEIGHT = 600, paddle_width = 10, paddle_height = 100, scoreboard_ref = None):
             self.x = x
             self.y = y
@@ -64,6 +86,7 @@ class Game_State:
             '''
             Resets the ball to the center with a random direction.
             '''
+
             self.x = self.WIDTH / 2
             self.y = self.HEIGHT / 2
             self.side = Side.NONE
@@ -71,7 +94,7 @@ class Game_State:
             self.xFac = random.choice([-1, 1])
             self.yFac = random.choice([-1, 1])
 
-        def score(self, side: Side, x: float, y: float): # change to pass ball coords
+        def score(self, side: Side, x: float, y: float):
 
             #print(f"Scoring for side: {side}")
 
@@ -113,13 +136,11 @@ class Game_State:
             if players:
                 self.hitPlayer(players)
              
-
-        #if the ball hit the wall, it results into reflection
         def hitWall(self):
             '''
-            Checks if the ball hits any edge. If it hits any edge after a paddle hit, reset the ball.
-            Otherwise, reflect the ball for top/bottom edges (if no prior paddle hit).
+            Checks if the ball hits any edge and resets the ball if it does and gives a point to a side.
             '''
+
             if self.y <= 0 or self.y >= self.HEIGHT or self.x <= 0 or self.x >= self.WIDTH:
                 if self.side in [Side.UPPER, Side.LOWER]:
                     self.score(self.side, self.x, self.y)
@@ -132,56 +153,51 @@ class Game_State:
         
         def hitPlayer(self, players: dict):
             '''
-            Checks if the ball has hit any player's paddle inner surface.
-            If it hits, reflect the ball and update last touched player.
-            Only counts hits on the inner surfaces of paddles.
+            checks if the ball has hit any player's paddle.
+            If it has, it will return the player ID of the player who hit the ball.
             '''
             for player_slot, player in players.items():
                 if player.id is None:  # Skip empty slots
                     continue
-                    #made changes to only count hits on the inner surfaces of paddles (#todo:Cornercases to be tested)
+                    
                 match player.position:
                     case Position.LEFT:
-                        # Only count hits on the right surface (inner surface) of left paddle
                         if (self.x <= player.x + self.paddle_width and
                             self.x >= player.x and
                             player.y <= self.y <= player.y + self.paddle_height and
-                            self.xFac < 0):  # Ball must be moving left to hit inner surface
+                            self.xFac < 0):  
                             self.xFac *= -1
                             self.side = Side.UPPER
                             self.last_touched_player = player_slot
                             return player.id
                     
                     case Position.RIGHT:
-                        # Only count hits on the left surface (inner surface) of right paddle
                         if (self.x + 5 >= player.x and
                             self.x <= player.x + self.paddle_width and
                             player.y <= self.y <= player.y + self.paddle_height and
-                            self.xFac > 0):  # Ball must be moving right to hit inner surface
+                            self.xFac > 0):  
                             self.xFac *= -1
                             self.side = Side.LOWER
                             self.last_touched_player = player_slot
                             return player.id
 
                     case Position.TOP:
-                        # Only count hits on the bottom surface (inner surface) of top paddle
                         if (self.y <= player.y + self.paddle_width and
                             self.y >= player.y and
                             player.x <= self.x <= player.x + self.paddle_height and
-                            self.yFac < 0):  # Ball must be moving up to hit inner surface
+                            self.yFac < 0):  
                             self.yFac *= -1
-                            self.side = Side.UPPER  # You might want to adjust this logic
+                            self.side = Side.UPPER 
                             self.last_touched_player = player_slot
                             return player.id
 
                     case Position.BOTTOM:
-                        # Only count hits on the top surface (inner surface) of bottom paddle
                         if (self.y + 5 >= player.y and
                             self.y <= player.y + self.paddle_width and
                             player.x <= self.x <= player.x + self.paddle_height and
-                            self.yFac > 0):  # Ball must be moving down to hit inner surface
+                            self.yFac > 0):  
                             self.yFac *= -1
-                            self.side = Side.LOWER  # You might want to adjust this logic
+                            self.side = Side.LOWER  
                             self.last_touched_player = player_slot
                             return player.id
             return None
@@ -202,11 +218,17 @@ class Game_State:
         def __init__(self, uuid: Optional[str], side=Side.NONE, x=0.0, y=0.0, position=None):
             '''
             The Player object contains the following:
-                - uuid: unique identifier for the player
+                - id: unique identifier for the player
                 - side: side of the player (LEFT, RIGHT, NONE)
                 - x: x pos
                 - y: y pos
+                - position: position of the player (LEFT, RIGHT, TOP, BOTTOM)
+
+                Methods:
+                Printing the object will return the position and side.
+                - update(x, y): updates the position.
             '''
+
             self.id: Optional[str] = uuid
             self.side = side
             self.x = x
@@ -218,8 +240,9 @@ class Game_State:
         
         def update(self, x, y):
             '''
-            Updates the player position and side.
+            Updates the player position.
             '''
+
             self.x = x
             self.y = y
 
@@ -247,7 +270,6 @@ class Game_State:
         '''
         Adds a player to the game state.
         '''
-        
 
         with self.game_lock:
             count = 0
@@ -275,6 +297,7 @@ class Game_State:
         '''
         Removes a player from the game state.
         '''
+
         with self.game_lock:
                 for player in self.players.values():
                     if player.id == remove_id:
@@ -292,6 +315,7 @@ class Game_State:
         '''
         Returns a list of players with empty slots too.
         '''
+
         with self.game_lock:
             return self.players
 
@@ -307,6 +331,7 @@ class Game_State:
         '''
         Updates the scoreboard.
         '''
+        
         with self.game_lock:
             self.scoreboard["upper_score"] = upper_score
             self.scoreboard["lower_score"] = lower_score
