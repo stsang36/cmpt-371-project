@@ -8,6 +8,7 @@ from shared import packet
 from Striker import striker
 from Ball import ball
 from typing import cast
+from button import Button
 
 IDLE_TIME = 1
 
@@ -37,11 +38,6 @@ def recv_handler(conn: connect.client_connection):
             unloaded_data = packet.unload_packet(data)
             #print(f"Received Data: {unloaded_data}")
             status = packet.Status(unloaded_data["status"])
-
-
-            
-
-
 
             match status:
                 case packet.Status.BALL_POS:
@@ -96,57 +92,8 @@ def recv_handler(conn: connect.client_connection):
     conn.close()
 
 
-try:
-    c = connect.init_connection()
-    
-    print(c)
-
-    pygame.init()
-
-    id = c.receive().decode()
-    c.set_id(id)
-    print(f"Connected with ID: {id}")
-
-    current_slot = packet.unload_packet(c.receive())
-    
-    c.player_slot = current_slot["slot"]
-    print(f"Player Slot: {c.player_slot}")
-
-    if c.player_slot in [1, 2]:
-        is_vertical = True
-    else:
-        is_vertical = False
-    
-    c.start_recieving(recv_handler)
-
-    while c.player_slot is None:
-        time.sleep(IDLE_TIME)
-
-
-    
-    
-    #Run pong game
-
-    # vertical strikers
-    player1 = striker(20, (pong_setup.HEIGHT / 2) - 50, 10, 100, 10, pong_setup.GREEN)
-    player2 = striker(pong_setup.WIDTH - 30, (pong_setup.HEIGHT / 2) - 50, 10, 100, 10, pong_setup.RED)
-    
-    # horizontal strikers
-    player3 = striker((pong_setup.WIDTH/2)-50, 20, 100, 10, 10, pong_setup.GREEN)
-    player4 = striker((pong_setup.WIDTH/2)-50, pong_setup.HEIGHT-30, 100, 10, 10, pong_setup.RED)
-    
-    with c.player_list_lock:
-        c.player_list["1"]["player"] = player1
-        c.player_list["2"]["player"] = player2
-        c.player_list["3"]["player"] = player3
-        c.player_list["4"]["player"] = player4
-
-
-        my_player = c.player_list[str(c.player_slot)]["player"]
-    
-    my_player = cast(striker, my_player)
-
-    Ball = ball(pong_setup.WIDTH/2, pong_setup.HEIGHT/2, 7, 5, pong_setup.WHITE)
+#main pong game
+def pong():
     running = True
     move = 0
     #event handling
@@ -202,7 +149,112 @@ try:
 
         pygame.display.update()
         pong_setup.clock.tick(pong_setup.FPS)
-    pygame.quit()
+
+
+try:
+    c = connect.init_connection()
+    
+    print(c)
+
+    pygame.init()
+
+    id = c.receive().decode()
+    c.set_id(id)
+    print(f"Connected with ID: {id}")
+
+    current_slot = packet.unload_packet(c.receive())
+    
+    c.player_slot = current_slot["slot"]
+    print(f"Player Slot: {c.player_slot}")
+
+    if c.player_slot in [1, 2]:
+        is_vertical = True
+    else:
+        is_vertical = False
+
+    # vertical strikers
+    player1 = striker(20, (pong_setup.HEIGHT / 2) - 50, 10, 100, 10, pong_setup.GREEN)
+    player2 = striker(pong_setup.WIDTH - 30, (pong_setup.HEIGHT / 2) - 50, 10, 100, 10, pong_setup.RED)
+    
+    # horizontal strikers
+    player3 = striker((pong_setup.WIDTH/2)-50, 20, 100, 10, 10, pong_setup.GREEN)
+    player4 = striker((pong_setup.WIDTH/2)-50, pong_setup.HEIGHT-30, 100, 10, 10, pong_setup.RED)
+    
+    with c.player_list_lock:
+        c.player_list["1"]["player"] = player1
+        c.player_list["2"]["player"] = player2
+        c.player_list["3"]["player"] = player3
+        c.player_list["4"]["player"] = player4
+
+
+        my_player = c.player_list[str(c.player_slot)]["player"]
+    
+    my_player = cast(striker, my_player)
+
+    Ball = ball(pong_setup.WIDTH/2, pong_setup.HEIGHT/2, 7, 5, pong_setup.WHITE)
+    
+    c.start_recieving(recv_handler)
+
+    while c.player_slot is None:
+        time.sleep(IDLE_TIME)
+
+    pygame.display.set_caption("Menu")
+
+    #font for menu
+    menuFont = pygame.font.Font("freesansbold.ttf", 100)
+    menuText = menuFont.render("PONG ROYALE", True, pong_setup.WHITE)
+    menuRect = menuText.get_rect(center=(450, 100))
+
+    buttonFont = pygame.font.Font("freesansbold.ttf", 75)
+    exitButton = Button(None, 450, 400, "EXIT", buttonFont, pong_setup.WHITE, pong_setup.GREEN)
+
+    waitFont = pygame.font.Font("freesansbold.ttf", 30)
+    waitText = waitFont.render("Waiting for other players", True, pong_setup.WHITE)
+    waitRect = waitText.get_rect(center=(450, 300))
+
+    started = False
+    ready_to_play = False
+
+    while True:
+        mousePos = pygame.mouse.get_pos()
+        pong_setup.screen.fill(pong_setup.BLACK)
+
+        pong_setup.screen.blit(menuText, menuRect)
+        pong_setup.screen.blit(waitText,waitRect)
+
+        for button in [exitButton]:
+            button.changeColour(mousePos[0], mousePos[1])
+            button.update(pong_setup.screen)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                        
+                if exitButton.checkForInput(mousePos[0], mousePos[1]):
+                    pygame.quit()
+
+        #count number of player who are ready to join the game
+        with c.player_list_lock:
+            active_count = sum(1 for p in c.player_list.values() if p["uuid"])
+
+        #if player has exited the game, close the game screen and disconnect the server
+        if started:
+            pygame.quit()
+            exit()
+
+        #if there are 4 players, start the game
+        if active_count == 4 and started != True:
+            ready_to_play = True
+            started = True
+
+        if ready_to_play:
+            pong()
+            ready_to_play = False
+
+
+        pygame.display.update()
+
 except Exception as e:
     print(f"Client error: {e}")
     exit(1)
