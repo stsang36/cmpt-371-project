@@ -55,7 +55,7 @@ class Game_State:
             self.paddle_width = paddle_width
             self.paddle_height = paddle_height
             self.scoreboard_ref = scoreboard_ref
-
+            self.last_touched_player = None
 
         def __str__(self):
             return f"Ball at position ({self.x}, {self.y}, {self.side})"
@@ -71,21 +71,34 @@ class Game_State:
             self.xFac = random.choice([-1, 1])
             self.yFac = random.choice([-1, 1])
 
-        def score(self, side: Side):
+        def score(self, side: Side, x: float, y: float): # change to pass ball coords
 
-            print(f"Scoring for side: {side}")
+            #print(f"Scoring for side: {side}")
 
             curr_scoreboard = self.scoreboard_ref
             
             if curr_scoreboard is None:
                 raise ValueError("Scoreboard reference is not set.")
             
+            hit_top = y <= 0
+            hit_bottom = y >= self.HEIGHT
+            hit_left = x <= 0
+            hit_right = x >= self.WIDTH
+
             if side == Side.UPPER:
-                print("upper player scored!")
-                curr_scoreboard["upper_score"] += 1
+                if hit_top or hit_left:
+                    # own goal upper hits top or left side
+                    self.scoreboard_ref["lower_score"] += 1
+                else:
+                    self.scoreboard_ref["upper_score"] += 1
+
             elif side == Side.LOWER:
-                print("lower player scored!")
-                curr_scoreboard["lower_score"] += 1
+                if hit_bottom or hit_right:
+                    # own goal lower hits bottom or right side
+                    self.scoreboard_ref["upper_score"] += 1
+                    
+                else:
+                    self.scoreboard_ref["lower_score"] += 1
             
             print(f"Scoreboard updated: {self.scoreboard_ref}")
             
@@ -99,6 +112,7 @@ class Game_State:
             self.hitWall()
             if players:
                 self.hitPlayer(players)
+             
 
         #if the ball hit the wall, it results into reflection
         def hitWall(self):
@@ -108,7 +122,7 @@ class Game_State:
             '''
             if self.y <= 0 or self.y >= self.HEIGHT or self.x <= 0 or self.x >= self.WIDTH:
                 if self.side in [Side.UPPER, Side.LOWER]:
-                    self.score(self.side)
+                    self.score(self.side, self.x, self.y)
                     self.reset()
                 else:
                     if self.y <= 0 or self.y >= self.HEIGHT:
