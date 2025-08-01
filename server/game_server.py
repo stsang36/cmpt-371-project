@@ -167,14 +167,16 @@ class server_connection:
         
 
         with self.clients_lock:
-            for aClient in self.clients:
+            list_copy = list(self.clients) 
 
-                if aClient.is_ready():
-                    try:
-                        aClient.send(data)
-                    except socket.error as e:
-                        print(f"Error sending data to client {aClient.id}: {e}")
-                        aClient.close()
+        for aClient in list_copy:
+
+            if aClient.is_ready():
+                try:
+                    aClient.send(data)
+                except socket.error as e:
+                    print(f"Error sending data to client {aClient.id}: {e}")
+                    aClient.close()
 
     def send_player_list(self):
         ''' sends the player list to all clients. '''
