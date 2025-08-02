@@ -84,7 +84,7 @@ def unload_packet(recieved):
         case Status.PAUSE:
             return {'status': Status.PAUSE}
         case Status.END:
-            winner, = struct.unpack("!s", recieved[1:])
+            winner, = struct.unpack("!36s", recieved[1:])
             return {'status': Status.END, 'winner': winner.decode()}
         case Status.BALL_POS:
             x, y = struct.unpack("!ff", recieved[1:])

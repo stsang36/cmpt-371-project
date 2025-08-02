@@ -12,11 +12,16 @@ from button import Button
 
 IDLE_TIME = 1
 
+ended = False
+winner = ""
+
 def recv_handler(conn: connect.client_connection) -> None:
     '''
     This thread handler would take in a client_connection to recieve new updates from the server.
     It should process messages and update the local game state.
     '''
+
+    global ended, winner
 
     while True:
 
@@ -78,6 +83,10 @@ def recv_handler(conn: connect.client_connection) -> None:
                     if isinstance(upper_score, int) and isinstance(lower_score, int):
                         conn.update_scoreboard(upper_score, lower_score)
 
+                case packet.Status.END:
+                    ended = True
+                    print("ended receive")
+
         except Exception as e:
             print(f"Socket Error: {e}")
             
@@ -86,11 +95,19 @@ def recv_handler(conn: connect.client_connection) -> None:
     conn.close()
 
 def pong(my_player: striker):
+    global ended, winner
     running = True
     move = 0
     #event handling
     while running:
         pong_setup.screen.fill(pong_setup.BLACK)
+
+        if ended:
+            running = False
+            if c.scoreboard["upper_score"] > c.scoreboard["lower_score"]:
+                winner = "Upper Team"
+            elif c.scoreboard["upper_score"] < c.scoreboard["lower_score"]:
+                winner = "Lower team"
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -154,7 +171,6 @@ try:
     print(f"Connected with ID: {id}")
 
     current_slot = packet.unload_packet(c.receive())
-    
 
     if not isinstance(current_slot["slot"], int):
         raise ValueError("Invalid player slot received from server.")
@@ -200,7 +216,7 @@ try:
     menuText = menuFont.render("PONG ROYALE", True, pong_setup.WHITE)
     menuRect = menuText.get_rect(center=(450, 100))
 
-    buttonFont = pygame.font.Font("freesansbold.ttf", 75)
+    buttonFont = pygame.font.Font("freesansbold.ttf", 30)
     exitButton = Button(None, 450, 400, "EXIT", buttonFont, pong_setup.WHITE, pong_setup.GREEN)
 
     waitFont = pygame.font.Font("freesansbold.ttf", 30)
@@ -213,9 +229,6 @@ try:
     while True:
         mousePos = pygame.mouse.get_pos()
         pong_setup.screen.fill(pong_setup.BLACK)
-
-        pong_setup.screen.blit(menuText, menuRect)
-        pong_setup.screen.blit(waitText,waitRect)
 
         for button in [exitButton]:
             button.changeColour(mousePos[0], mousePos[1])
@@ -233,10 +246,20 @@ try:
         with c.player_list_lock:
             active_count = sum(1 for p in c.player_list.values() if p["uuid"])
 
+        #if game has ended, show which team won the game
+        if ended:
+            endText = waitFont.render(f"{winner} win", True, pong_setup.WHITE)
+            endRect = endText.get_rect(center=(450, 250))
+            pong_setup.screen.blit(endText,endRect)
+
         #if player has exited the game, close the game screen and disconnect the server
-        if started:
+        elif started:
             pygame.quit()
             exit()
+        #show main menu of the game
+        else:
+            pong_setup.screen.blit(menuText, menuRect)
+            pong_setup.screen.blit(waitText,waitRect)
 
         #if there are 4 players, start the game
         if active_count == 4 and started != True:

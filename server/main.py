@@ -148,10 +148,15 @@ def ball_updater_thread(conn: gs.server_connection):
                 except Exception as e:
                     print(f"Ball Exception: {e}")
                 
-        
+                curr_scoreboard = game_state.ball.scoreboard_ref
+                upper_score = curr_scoreboard["upper_score"]
+                lower_score = curr_scoreboard["lower_score"]
+                if lower_score == 1 or upper_score == 1:
+                    game_state.end()
+                    
             if game_state.ended:
                 print("Game has ended.")
-                to_end = packet.serialize({"winner": game_state.ball.side}, packet.Status.END)
+                to_end = packet.serialize({"winner": game_state.ball.side.value}, packet.Status.END)
                 
                 try:
                     conn.update_clients(to_end)
@@ -206,7 +211,6 @@ def main():
         player_list_t.start()
 
         c.accept_clients(handle_client) # this is a blocking call for this thread.
-
 
     except Exception as e:
         print(f"Server Exception occured: {e}")
