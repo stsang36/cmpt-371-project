@@ -350,6 +350,8 @@ class Game_State:
     def is_ended(self):
         with self.game_lock:
             return self.ended
+        
+   
 
     
     def reset_game(self):
@@ -357,14 +359,14 @@ class Game_State:
         Resets the game.
         '''
         with self.game_lock:
-            self.ball.reset()
             self.scoreboard = {
                 "upper_score": 0,
                 "lower_score": 0
             }
             self.paused = False
             self.ended = False
-        
+            self.ball = self.Ball(scoreboard_ref=self.scoreboard)
+            self.ball.reset()
     
 
 

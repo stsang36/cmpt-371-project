@@ -73,6 +73,7 @@ def handle_client(client: gs.client, conn: gs.server_connection):
     if conn.get_active() == 1 and conn.game_state.is_ended():
         # If this is the first client and the game has ended, reset the game state.
         conn.game_state.reset_game()
+        conn.game_state.unpause()
         print("Game state reset for a new player.")
 
 
@@ -170,7 +171,7 @@ def ball_updater_thread(conn: gs.server_connection):
             if game_state.is_ended():
                 print("Game has ended.")
                 to_end = packet.serialize({"winner": game_state.ball.side.value}, packet.Status.END)
-                
+                conn.game_state.pause()
                 try:
                     conn.update_clients(to_end)
                 except Exception as e:
