@@ -149,6 +149,10 @@ def ball_updater_thread(conn: gs.server_connection):
                     print(f"Ball Exception: {e}")
                 
                 curr_scoreboard = game_state.ball.scoreboard_ref
+                
+                if not curr_scoreboard:
+                    raise ValueError("Scoreboard not found in game state.")
+                
                 upper_score = curr_scoreboard["upper_score"]
                 lower_score = curr_scoreboard["lower_score"]
                 if lower_score == 1 or upper_score == 1:

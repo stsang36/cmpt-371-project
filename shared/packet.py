@@ -27,11 +27,16 @@ class Status(Enum):
 
 def serialize(data, s: Status):
     '''
-    tries to format the byte string before sending. Returns a package ready to encode and send.
+    Tries to format the byte string before sending. Returns a package ready to encode and send.
+    Requires a dictionary with the data and a Status enum.
+
+    Currently used types:
     ! - network byte order
     c - char
     36s - 36 byte string (for UUID)
     ff - two floats (x, y)
+    H - unsigned short (for player slot)
+    ii - two integers (for upper and lower score)
     '''
 
     if not data:
@@ -66,7 +71,7 @@ def serialize(data, s: Status):
 def unload_packet(recieved):
 
     '''
-    checks the first status then unloads the packet recieved.
+    Checks the first status then unloads the packet recieved.
     Returns a dictionary with the status and the data.
     '''
 
