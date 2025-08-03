@@ -94,31 +94,27 @@ def handle_client(client: gs.client, conn: gs.server_connection):
             to_send = None
 
             # Handle the different packet statuses
-            with conn.game_state.game_lock:
                 
-                match status:
-                    case packet.Status.MOVE:
-
+            match status:
+                case packet.Status.MOVE:
+                    with conn.game_state.game_lock:
                         for player in conn.game_state.players.values():
                             if player.id == str(client.id):
                                 # Update the player's position
                                 player.update(unloaded_data["x"], unloaded_data["y"])
                                 to_send = packet.serialize({"uuid": str(client.id), "x": player.x, "y": player.y}, packet.Status.MOVE)
-                   
-                    case packet.Status.PAUSE:
-                        conn.game_state.pause()
-                        to_send = packet.serialize({}, packet.Status.PAUSE)
+                
+                case packet.Status.PAUSE:
+                    conn.game_state.pause()
+                    to_send = packet.serialize({}, packet.Status.PAUSE)
 
-                    case packet.Status.END:
-                        conn.game_state.end()
-                        to_send = packet.serialize({"winner": client.id}, packet.Status.END)
 
-            # now send the updated data to all clients and the scoreboard.
-            try:
-                conn.update_clients(to_send)
-                conn.send_scoreboard()
-            except Exception as e:
-                print(f"Error updating clients: {e}")
+        # now send the updated data to all clients and the scoreboard.
+        try:
+            conn.update_clients(to_send)
+            conn.send_scoreboard()
+        except Exception as e:
+            print(f"Error updating clients: {e}")
 
         
     except Exception as e:
@@ -164,7 +160,7 @@ def ball_updater_thread(conn: gs.server_connection):
                 upper_score = curr_scoreboard["upper_score"]
                 lower_score = curr_scoreboard["lower_score"]
             
-            if lower_score == 1 or upper_score == 1:
+            if lower_score == 10 or upper_score == 10:
                 game_state.end()
                     
                     
