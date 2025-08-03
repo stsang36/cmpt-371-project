@@ -70,6 +70,12 @@ def handle_client(client: gs.client, conn: gs.server_connection):
     client.ready_up()
     conn.send_player_list()
 
+    if conn.get_active() == 1 and conn.game_state.is_ended():
+        # If this is the first client and the game has ended, reset the game state.
+        conn.game_state.reset_game()
+        print("Game state reset for a new player.")
+
+
     #start the client receiving thread.
     try:
         while True:
@@ -135,30 +141,33 @@ def ball_updater_thread(conn: gs.server_connection):
     '''
     game_state = conn.game_state
 
-    while True:     
+    while True:
+        #print(f"game_state.is_paused() = {game_state.is_paused()} conn.get_active() = {conn.get_active()} game_state.is_ended() = {game_state.is_ended()}")
         if not game_state.is_paused() and conn.get_active() > 0:
             with game_state.game_lock:
                 game_state.ball.update(players = game_state.players)
-
                 to_send = packet.serialize({"x": game_state.ball.x,"y": game_state.ball.y}, packet.Status.BALL_POS)
 
-                try:
-                    #print(f"Sending Ball Position: {game_state.ball.x}, {game_state.ball.y}")
-                    conn.update_clients(to_send)
-                except Exception as e:
-                    print(f"Ball Exception: {e}")
-                
+            try:
+                #print(f"Sending Ball Position: {game_state.ball.x}, {game_state.ball.y}")
+                conn.update_clients(to_send)
+            except Exception as e:
+                print(f"Ball Exception: {e}")
+
+            with game_state.game_lock: 
                 curr_scoreboard = game_state.ball.scoreboard_ref
                 
                 if not curr_scoreboard:
                     raise ValueError("Scoreboard not found in game state.")
-                
+                    
                 upper_score = curr_scoreboard["upper_score"]
                 lower_score = curr_scoreboard["lower_score"]
-                if lower_score == 1 or upper_score == 1:
-                    game_state.end()
+            
+            if lower_score == 1 or upper_score == 1:
+                game_state.end()
                     
-            if game_state.ended:
+                    
+            if game_state.is_ended():
                 print("Game has ended.")
                 to_end = packet.serialize({"winner": game_state.ball.side.value}, packet.Status.END)
                 
@@ -166,8 +175,6 @@ def ball_updater_thread(conn: gs.server_connection):
                     conn.update_clients(to_end)
                 except Exception as e:
                     print(f"Error sending END packet: {e}")
-
-                break
         
         # If the game is paused or no clients are connected, wait for a while before checking again.
         if game_state.is_paused() or conn.get_active() < 1:

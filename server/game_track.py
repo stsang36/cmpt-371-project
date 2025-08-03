@@ -107,7 +107,7 @@ class Game_State:
             hit_bottom = y >= self.HEIGHT
             hit_left = x <= 0
             hit_right = x >= self.WIDTH
-
+            print(side)
             if side == Side.UPPER:
                 if hit_top or hit_left:
                     # own goal upper hits top or left side
@@ -213,21 +213,12 @@ class Game_State:
             - x: x pos
             - y: y pos
             - position: position of the player (LEFT, RIGHT, TOP, BOTTOM)
+        Methods:
+            - printing the object will return the position and side.
+            - update(x, y): updates the player position.
         '''
 
         def __init__(self, uuid: Optional[str], side=Side.NONE, x=0.0, y=0.0, position=None):
-            '''
-            The Player object contains the following:
-                - id: unique identifier for the player
-                - side: side of the player (LEFT, RIGHT, NONE)
-                - x: x pos
-                - y: y pos
-                - position: position of the player (LEFT, RIGHT, TOP, BOTTOM)
-
-                Methods:
-                Printing the object will return the position and side.
-                - update(x, y): updates the position.
-            '''
 
             self.id: Optional[str] = uuid
             self.side = side
@@ -335,6 +326,7 @@ class Game_State:
         with self.game_lock:
             self.scoreboard["upper_score"] = upper_score
             self.scoreboard["lower_score"] = lower_score
+    
 
 
 
@@ -347,12 +339,32 @@ class Game_State:
             self.paused = False
     
     def end(self):
-        # with self.game_lock:
-        self.ended = True
+        with self.game_lock:
+            self.ended = True
+            self.paused = True
 
     def is_paused(self):
         with self.game_lock:
             return self.paused
+        
+    def is_ended(self):
+        with self.game_lock:
+            return self.ended
+
+    
+    def reset_game(self):
+        '''
+        Resets the game.
+        '''
+        with self.game_lock:
+            self.ball.reset()
+            self.scoreboard = {
+                "upper_score": 0,
+                "lower_score": 0
+            }
+            self.paused = False
+            self.ended = False
+        
     
 
 

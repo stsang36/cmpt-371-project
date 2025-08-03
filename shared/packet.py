@@ -52,7 +52,7 @@ def serialize(data, s: Status):
         case Status.END:
             return struct.pack("!c36s", Status.END.value.encode(), data["winner"].encode())
         case Status.START:
-            return struct.pack("!c36s", Status.START.value.encode(), data["uuid"].encode())
+            return struct.pack("!c", Status.START.value.encode())
         case Status.PLAYER_NEW_SLOT:
             return struct.pack("!c36sH", Status.PLAYER_NEW_SLOT.value.encode(), data["uuid"].encode(), data["slot"])
         case Status.PLAYER_LIST:
@@ -95,8 +95,7 @@ def unload_packet(recieved):
             x, y = struct.unpack("!ff", recieved[1:])
             return {'status': Status.BALL_POS, 'x': x, 'y': y}
         case Status.START:
-            uuid, = struct.unpack("!36s", recieved[1:])
-            return {'status': Status.START, 'uuid': uuid.decode()}
+            return {'status': Status.START}
         case Status.PLAYER_NEW_SLOT:
             uuid, slot = struct.unpack("!36sH", recieved[1:])
             return {'status': Status.PLAYER_NEW_SLOT, 'uuid': uuid.decode(), 'slot': slot}

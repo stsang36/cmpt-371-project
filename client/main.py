@@ -9,10 +9,12 @@ from Striker import striker
 from Ball import ball
 from typing import cast
 from button import Button
+import threading
 
 IDLE_TIME = 1
 
 ended = False
+end_lock = threading.Lock()
 winner = ""
 
 def recv_handler(conn: connect.client_connection) -> None:
@@ -21,7 +23,7 @@ def recv_handler(conn: connect.client_connection) -> None:
     It should process messages and update the local game state.
     '''
 
-    global ended, winner
+    global ended, winner, end_lock
 
     while True:
 
@@ -84,11 +86,35 @@ def recv_handler(conn: connect.client_connection) -> None:
                         conn.update_scoreboard(upper_score, lower_score)
 
                 case packet.Status.END:
-                    ended = True
-                    print("ended receive")
+                    
+                    with end_lock:
+                        ended = True
+
+
+        except ConnectionResetError as e:
+            print(f"Connection Exception: {e}")
+            conn.close()
+
+            with end_lock:
+                ended = True
+                winner = "Server Disconnected"
+            return
+
+        except ConnectionError as e:
+            print(f"Connection Error: {e}")
+            conn.close()
+            with end_lock:
+                ended = True
+                winner = "Server Disconnected"
+            return
+
+
+        except ValueError as e:
+            print(f"Value Error: {e}")
 
         except Exception as e:
-            print(f"Socket Error: {e}")
+            print(f"Exception: {e}")
+
             
         
 
@@ -101,13 +127,18 @@ def pong(my_player: striker):
     #event handling
     while running:
         pong_setup.screen.fill(pong_setup.BLACK)
+        
+        with end_lock:
+            ended_copy = ended
 
-        if ended:
+        if ended_copy:
             running = False
             if c.scoreboard["upper_score"] > c.scoreboard["lower_score"]:
-                winner = "Upper Team"
+                with end_lock:
+                    winner = "Upper Team"
             elif c.scoreboard["upper_score"] < c.scoreboard["lower_score"]:
-                winner = "Lower team"
+                with end_lock:    
+                    winner = "Lower team"
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -247,8 +278,18 @@ try:
             active_count = sum(1 for p in c.player_list.values() if p["uuid"])
 
         #if game has ended, show which team won the game
-        if ended:
-            endText = waitFont.render(f"{winner} win", True, pong_setup.WHITE)
+
+        with end_lock:
+            end_copy = ended
+
+        if end_copy:
+            with end_lock:
+
+                if "Server Disconnected" in winner:
+                    endText = waitFont.render(f"Disconnected!\nRelaunch the client.", True, pong_setup.RED)
+                else:
+                    winner = c.get_winner()
+                    endText = waitFont.render(f"{winner} wins!", True, pong_setup.WHITE)
             endRect = endText.get_rect(center=(450, 250))
             pong_setup.screen.blit(endText,endRect)
 
@@ -269,6 +310,7 @@ try:
         if ready_to_play:
             pong(my_player)
             ready_to_play = False
+
 
 
         pygame.display.update()

@@ -88,6 +88,7 @@ class client:
     def ready_up(self) -> None:
         with client_lock:
             self.ready = True
+        
     
     def is_ready(self) -> bool:
         return self.ready
@@ -134,6 +135,8 @@ class server_connection:
             clients_len = len(clients)
             
         return clients_len
+    
+    
     
     def __str__(self):
         return f"Listening at: {self.ip}:{self.port}, with {self.get_active()} active connections."

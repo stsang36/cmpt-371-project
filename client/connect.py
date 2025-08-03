@@ -123,6 +123,17 @@ class client_connection:
                 self.scoreboard["upper_score"] = upper_score
             if lower_score is not None:
                 self.scoreboard["lower_score"] = lower_score
+    def get_winner(self) -> str:
+        '''
+        Get the winner based on the scoreboard.
+        '''
+        with self.scoreboard_lock:
+            if self.scoreboard["upper_score"] > self.scoreboard["lower_score"]:
+                return "upper"
+            elif self.scoreboard["lower_score"] > self.scoreboard["upper_score"]:
+                return "lower"
+            else:
+                return "draw"
 
 def load_config() -> dict:
     '''
