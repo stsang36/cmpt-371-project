@@ -39,7 +39,12 @@ class Game_State:
         - get_player_list() to get a list of players with empty slots too
         - get_scoreboard() to get the current scoreboard
         - update_scoreboard() to update the scoreboard
-
+        - pause() to pause the game
+        - unpause() to unpause the game
+        - end() to end the game
+        - is_paused() to check if the game is paused
+        - is_ended() to check if the game has ended
+        - reset_game() to reset the game state
     '''
     class Ball:
         '''
@@ -64,6 +69,7 @@ class Game_State:
             - hitWall(): checks if the ball hits a wall
             - hitPlayer(players): checks if the ball has hit any player's paddle
             - get_side(): returns the side of the ball
+            
         '''
 
         def __init__ (self, x = 450, y = 300, xFac = 1, yFac = 1, WIDTH = 900, HEIGHT = 600, paddle_width = 10, paddle_height = 100, scoreboard_ref = None):

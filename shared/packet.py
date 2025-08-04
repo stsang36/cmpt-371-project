@@ -12,7 +12,9 @@ class Status(Enum):
     - END: when the game ends.
     - BALL_POS: when the ball position is updated.
     - START: when the game starts.
-
+    - PLAYER_NEW_SLOT: when a player is assigned a new slot.
+    - PLAYER_LIST: when the player list is sent.
+    - SCOREBOARD: when the scoreboard is updated.
     '''
     SUCCESS = 'S'
     FAILURE = 'F'

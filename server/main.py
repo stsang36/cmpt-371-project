@@ -10,6 +10,7 @@ from shared import packet
 BALL_UPDATE_INTERVAL = 0.03
 IDLE_TIME = 1
 PLAYER_LIST_UPDATE_INTERVAL = 2
+TARGET_SCORE = 10
 
 server_socket = None
 
@@ -160,7 +161,7 @@ def ball_updater_thread(conn: gs.server_connection):
                 upper_score = curr_scoreboard["upper_score"]
                 lower_score = curr_scoreboard["lower_score"]
             
-            if lower_score == 10 or upper_score == 10:
+            if lower_score == TARGET_SCORE or upper_score == TARGET_SCORE:
                 game_state.end()
                     
                     
