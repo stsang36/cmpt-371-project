@@ -109,12 +109,12 @@ def handle_client(client: gs.client, conn: gs.server_connection):
                     to_send = packet.serialize({}, packet.Status.PAUSE)
 
 
-        # now send the updated data to all clients and the scoreboard.
-        try:
-            conn.update_clients(to_send)
-            conn.send_scoreboard()
-        except Exception as e:
-            print(f"Error updating clients: {e}")
+         # now send the updated data to all clients and the scoreboard.
+            try:
+                conn.update_clients(to_send)
+                conn.send_scoreboard()
+            except Exception as e:
+                print(f"Error updating clients: {e}")
 
         
     except Exception as e:
