@@ -13,14 +13,15 @@ import threading
 
 IDLE_TIME = 1
 
+# Global variables to track game end and winner
 ended = False
 end_lock = threading.Lock()
 winner = ""
 
 def recv_handler(conn: connect.client_connection) -> None:
     '''
-    This thread handler would take in a client_connection to recieve new updates from the server.
-    It should process messages and update the local game state.
+    This thread handler would take in a client_connection to handle incoming packets from the server in a separate thread.
+    It should process messages and update the local game state such as ball, movement, score and game end triggers.
     '''
 
     global ended, winner, end_lock
@@ -36,17 +37,22 @@ def recv_handler(conn: connect.client_connection) -> None:
             if len(data) < 8:
                 continue
 
+            # Unload the packet data
             unloaded_data = packet.unload_packet(data)
-            #print(f"Received Data: {unloaded_data}")
             status = packet.Status(unloaded_data["status"])
 
+            # Match packet status type to handled action
             match status:
+
+                #ball position update
                 case packet.Status.BALL_POS:
                     x = unloaded_data["x"]
                     y = unloaded_data["y"]
                     if isinstance(x, (int, float)) and isinstance(y, (int, float)):
                         Ball.posx = float(x)
                         Ball.posy = float(y)
+
+                #striker movement update
                 case packet.Status.MOVE:
                     uuid = unloaded_data["uuid"]
                     x = unloaded_data["x"]
@@ -55,7 +61,6 @@ def recv_handler(conn: connect.client_connection) -> None:
                     p = None
                     with conn.player_list_lock:
                         for s, d in conn.player_list.items():
-                            #print(f"Checking player {s} with uuid {d['uuid']}")
                             if d['uuid'] == uuid:
                                 p = d['player']
                                 break
@@ -66,7 +71,7 @@ def recv_handler(conn: connect.client_connection) -> None:
                             p.posx = float(x)
                             p.posy = float(y)
                             p.updatePos()
-
+                #player slots/count update
                 case packet.Status.PLAYER_LIST:
                     p1 = unloaded_data["p1"]
                     p2 = unloaded_data["p2"]
@@ -78,6 +83,7 @@ def recv_handler(conn: connect.client_connection) -> None:
                         conn.player_list["2"]["uuid"] = p2
                         conn.player_list["3"]["uuid"] = p3
                         conn.player_list["4"]["uuid"] = p4
+                #update scoreboard
                 case packet.Status.SCOREBOARD:
                     upper_score = unloaded_data["upper_score"]
                     lower_score = unloaded_data["lower_score"]
@@ -121,18 +127,22 @@ def recv_handler(conn: connect.client_connection) -> None:
     conn.close()
 
 def pong(my_player: striker):
+    '''
+    Main game loop that handles input, updates player state, and renders game frames.
+    '''
     global ended, winner
     running = True
     move = 0
     #event handling
     while running:
         pong_setup.screen.fill(pong_setup.BLACK)
-        
+        # Check if game has ended
         with end_lock:
             ended_copy = ended
 
         if ended_copy:
             running = False
+            # Determine winner based on final score
             if c.scoreboard["upper_score"] > c.scoreboard["lower_score"]:
                 with end_lock:
                     winner = "Upper Team"
@@ -143,7 +153,7 @@ def pong(my_player: striker):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-
+            # handle key presses for player movement for horizontal or vertical strikers
             if is_vertical:
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_UP:
@@ -168,10 +178,10 @@ def pong(my_player: striker):
         else:
             my_player.updateHori(move)
         #send player's position and ball's position to the server
-        data = {'uuid': c.get_id(), 'x': my_player.posx, 'y': my_player.posy}
-        
+        data = {'uuid': c.get_id(), 'x': my_player.posx, 'y': my_player.posy} 
         c.send(data, packet.Status.MOVE)
         
+        # draw all connected players
         with c.player_list_lock:
             for s, i in c.player_list.items():
                 if i['uuid'] != "":
@@ -180,9 +190,9 @@ def pong(my_player: striker):
 
                     if i['uuid'] == c.get_id():
                         p.display(is_current_player=True)
-
+        # draw the ball
         Ball.display()
-
+        # draw the scoreboard
         with c.scoreboard_lock:
             pong_setup.displayText("Score:", c.scoreboard['upper_score'], 150, 100, pong_setup.GREEN)
             pong_setup.displayText("Score:", c.scoreboard['lower_score'], pong_setup.WIDTH - 150, pong_setup.HEIGHT - 100, pong_setup.RED)
@@ -190,25 +200,24 @@ def pong(my_player: striker):
         pygame.display.update()
         pong_setup.clock.tick(pong_setup.FPS)
 
-
+# Main Menu Handling
 try:
     c = connect.init_connection()
     print(c)
 
     pygame.init()
 
+    # Get unique player ID from server
     id = c.receive().decode()
     c.set_id(id)
     print(f"Connected with ID: {id}")
 
+    # Get assigned player slot from server and assign player to position striker
     current_slot = packet.unload_packet(c.receive())
-
     if not isinstance(current_slot["slot"], int):
         raise ValueError("Invalid player slot received from server.")
-
     c.player_slot = current_slot["slot"]
     print(f"Player Slot: {c.player_slot}")
-
     if c.player_slot in [1, 2]:
         is_vertical = True
     else:
@@ -233,10 +242,12 @@ try:
     
     my_player = cast(striker, my_player)
 
+    # intialize the ball
     Ball = ball(pong_setup.WIDTH/2, pong_setup.HEIGHT/2, 7, pong_setup.WHITE)
     
+    #initialize the thread
     c.start_recieving(recv_handler)
-
+    # wait for player slot to be assigned
     while c.player_slot is None:
         time.sleep(IDLE_TIME)
 
@@ -305,7 +316,7 @@ try:
             playerCountText = waitFont.render(f"Players connected: {active_count}/4", True, pong_setup.WHITE)
             playerCountRect = playerCountText.get_rect(center=(450, 340))
             pong_setup.screen.blit(playerCountText, playerCountRect)
-            
+
         #if there are 4 players, start the game
         if active_count == 4 and started != True:
             ready_to_play = True
