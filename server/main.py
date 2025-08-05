@@ -10,7 +10,7 @@ from shared import packet
 BALL_UPDATE_INTERVAL = 0.03
 IDLE_TIME = 1
 PLAYER_LIST_UPDATE_INTERVAL = 2
-TARGET_SCORE = 5
+TARGET_SCORE = 10
 
 server_socket = None
 
