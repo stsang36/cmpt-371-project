@@ -373,6 +373,8 @@ class Game_State:
             self.ended = False
             self.ball = self.Ball(scoreboard_ref=self.scoreboard)
             self.ball.reset()
+
+            self.ball.scoreboard_ref = self.scoreboard
     
 
 
