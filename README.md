@@ -41,7 +41,7 @@ pip3 install -r requirements.txt
 
 The server will now start listening to new connections on the assigned IP and Port.
 
-### Client (2-4 players):
+### Client (4 players):
 1. Enter the client directory
    ```cd client```
 2. Open the config.json file with your text editor and replace the IP and PORT fields of the target host.
