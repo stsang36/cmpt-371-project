@@ -253,7 +253,7 @@ try:
     waitFont = pygame.font.Font("freesansbold.ttf", 30)
     waitText = waitFont.render("Waiting for other players", True, pong_setup.WHITE)
     waitRect = waitText.get_rect(center=(450, 300))
-
+    
     started = False
     ready_to_play = False
 
@@ -301,7 +301,11 @@ try:
         else:
             pong_setup.screen.blit(menuText, menuRect)
             pong_setup.screen.blit(waitText,waitRect)
-
+            # Display active player count
+            playerCountText = waitFont.render(f"Players connected: {active_count}/4", True, pong_setup.WHITE)
+            playerCountRect = playerCountText.get_rect(center=(450, 340))
+            pong_setup.screen.blit(playerCountText, playerCountRect)
+            
         #if there are 4 players, start the game
         if active_count == 4 and started != True:
             ready_to_play = True
