@@ -184,8 +184,8 @@ def pong(my_player: striker):
         Ball.display()
 
         with c.scoreboard_lock:
-            pong_setup.displayText("Score:", c.scoreboard['upper_score'], pong_setup.WIDTH//2, 20, pong_setup.WHITE)
-            pong_setup.displayText("Score:", c.scoreboard['lower_score'], pong_setup.WIDTH//2, pong_setup.HEIGHT - 20, pong_setup.WHITE)
+            pong_setup.displayText("Score:", c.scoreboard['upper_score'], 150, 100, pong_setup.GREEN)
+            pong_setup.displayText("Score:", c.scoreboard['lower_score'], pong_setup.WIDTH - 150, pong_setup.HEIGHT - 100, pong_setup.RED)
 
         pygame.display.update()
         pong_setup.clock.tick(pong_setup.FPS)
