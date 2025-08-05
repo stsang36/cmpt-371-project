@@ -10,7 +10,7 @@ from shared import packet
 BALL_UPDATE_INTERVAL = 0.03
 IDLE_TIME = 1
 PLAYER_LIST_UPDATE_INTERVAL = 2
-TARGET_SCORE = 10
+TARGET_SCORE = 5
 
 server_socket = None
 
@@ -71,7 +71,7 @@ def handle_client(client: gs.client, conn: gs.server_connection):
     client.ready_up()
     conn.send_player_list()
 
-    if conn.get_active() == 1 and conn.game_state.is_ended():
+    if conn.game_state.is_ended():
         # If this is the first client and the game has ended, reset the game state.
         conn.game_state.reset_game()
         conn.game_state.unpause()
@@ -123,11 +123,23 @@ def handle_client(client: gs.client, conn: gs.server_connection):
 
     # handle client disconnection
     finally:
+        # get players before closing the client
+
         client.close()
         conn.game_state.remove_player(str(client.id))
         conn.send_player_list()
         print(f"There is now {conn.get_active()} active connections.")
 
+        # Get player count after removing client
+        players_after = conn.get_active()
+
+        if players_after < 4 and players_after > 0:
+            try:
+                # Send current scoreboard to remaining players
+                # The ball_updater_thread will reset it on the next cycle
+                conn.send_scoreboard()
+            except Exception as e:
+                print(f"Error sending scoreboard after disconnect: {e}")
     pass
 
 def ball_updater_thread(conn: gs.server_connection):
@@ -138,8 +150,39 @@ def ball_updater_thread(conn: gs.server_connection):
     Requires a server_connection object.
     '''
     game_state = conn.game_state
-
+    
     while True:
+        active_players = conn.get_active()
+        # Less than 4 players - pause game and reset scoreboard
+        if active_players < 4 and active_players > 0:
+            if not game_state.is_paused() or not game_state.is_ended():
+                with game_state.game_lock:
+                    # Reset scoreboard if not 0-0
+                    if (game_state.scoreboard["upper_score"] != 0 or 
+                        game_state.scoreboard["lower_score"] != 0):
+                        print(f"Resetting scoreboard due to insufficient players ({active_players}/4)")
+                        game_state.scoreboard["upper_score"] = 0
+                        game_state.scoreboard["lower_score"] = 0
+                        game_state.ball.reset()
+                    # Pause the game (but don't mark as ended)     
+                    game_state.paused = True
+                # Send updated scoreboard to remaining clients
+                try:
+                    conn.send_scoreboard()
+                except Exception as e:
+                    print(f"Error sending reset scoreboard: {e}")
+
+        # All 4 player present unpause if currently paused (but not ended)            
+        elif active_players == 4:
+            if game_state.is_paused() and not game_state.is_ended():    
+                game_state.unpause()
+
+        # No players pause but don't reset scoreboard yet
+        elif active_players == 0:
+            if not game_state.is_paused():
+                game_state.pause()
+
+        #main loop            
         #print(f"game_state.is_paused() = {game_state.is_paused()} conn.get_active() = {conn.get_active()} game_state.is_ended() = {game_state.is_ended()}")
         if not game_state.is_paused() and conn.get_active() > 0:
             with game_state.game_lock:
