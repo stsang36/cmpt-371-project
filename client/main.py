@@ -233,8 +233,12 @@ try:
         if not isinstance(current_slot["slot"], int):
             continue
 
-        c.player_slot = current_slot["slot"]
-        print(f"Player Slot: {c.player_slot}")
+        if current_slot.get("slot") is None:
+            continue
+        
+        
+        c.set_player_slot(current_slot["slot"])
+
         if c.player_slot in [1, 2]:
             is_vertical = True
         else:
@@ -315,9 +319,11 @@ try:
 
                 if "Server Disconnected" in winner:
                     endText = waitFont.render(f"Disconnected!\nRelaunch the client.", True, pong_setup.RED)
+                    pygame.display.set_caption("Disconnected")
                 else:
                     winner = c.get_winner()
                     endText = waitFont.render(f"{winner} wins!", True, pong_setup.WHITE)
+                    pygame.display.set_caption(f"{winner} wins!")
             endRect = endText.get_rect(center=(450, 250))
             pong_setup.screen.blit(endText,endRect)
 
@@ -338,6 +344,7 @@ try:
         if active_count == 4 and started != True:
             ready_to_play = True
             started = True
+            pygame.display.set_caption("Pong Royale")
 
         if ready_to_play:
             pong(my_player)

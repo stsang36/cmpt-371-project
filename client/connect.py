@@ -66,12 +66,16 @@ class client_connection:
     def __str__(self) -> str:
         return f"Client Connected to server at {self.ip}:{self.port}"
 
-    def send(self, data, STATUS: packet.Status) -> None:
-        
+    def send(self, data: dict, STATUS: packet.Status) -> None:
+        '''.send() will sendall encoded data to the server. The data passed must be a dictionary.
+        The STATUS parameter is used to specify the type of packet being sent.
+        Each message will be ended with a newline character.
+        '''
         packet_data = packet.serialize(data, STATUS)
         self.socket.sendall(packet_data + b'\n')  
 
     def receive(self) -> bytes:
+        ''' .recieve() will call recv and return the data received. Each message is ended with a newline char'''
         self.socket.settimeout(TIMEOUT)
         buff = b''
 

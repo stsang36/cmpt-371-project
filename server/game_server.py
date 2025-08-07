@@ -43,11 +43,15 @@ class client:
     def __str__(self) -> str:
         return f"Client connected: {self.ip}:{self.port} ID: {self.id}"
     
-    def send(self, data) -> None:
-        '''.send(data) will encode and send the data from the paramater to the server in the server_connection object.'''
+    def send(self, data: bytes) -> None:
+        '''.send(data) either encode a string or get a byte object and send it to the server.
+            It will be ended with a newline character. Unlike the client, this does not serialize the data for you.
+            You must serialize the data before sending it.
+        '''
         
         if isinstance(data, str):
             data = data.encode()
+        data = bytes(data)
         self.conn.sendall(data + b'\n')
 
     
