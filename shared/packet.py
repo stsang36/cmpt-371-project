@@ -66,6 +66,9 @@ def serialize(data, s: Status):
                               )
         case Status.SCOREBOARD:
             return struct.pack("!cii", Status.SCOREBOARD.value.encode(), data["upper_score"], data["lower_score"])
+        case Status.SUCCESS:
+            return struct.pack("!c", Status.SUCCESS.value.encode())
+        
         case _:
             raise ValueError("Unknown type.")
         
@@ -117,6 +120,8 @@ def unload_packet(recieved):
                 'upper_score': upper_score, 
                 'lower_score': lower_score
             }
+        case Status.SUCCESS:
+            return {'status': Status.SUCCESS}
         
 
         case _:

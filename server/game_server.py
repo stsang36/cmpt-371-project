@@ -92,7 +92,7 @@ class client:
     
     def is_ready(self) -> bool:
         return self.ready
-        
+
 
 class server_connection:
     '''
@@ -124,7 +124,6 @@ class server_connection:
         self.clients_lock = client_lock
         self.game_state = gt.Game_State()
         
-
 
     def get_active(self) -> int:
         '''Gets a the number of active clients.'''

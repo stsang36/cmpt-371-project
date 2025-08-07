@@ -58,7 +58,9 @@ def handle_client(client: gs.client, conn: gs.server_connection):
     
     print(f"Player {str(client.id)} added to slot {player_slot}.")
 
+
     new_send = packet.serialize({"uuid": str(client.id), "slot": int(player_slot[1:])}, packet.Status.PLAYER_NEW_SLOT)
+
     try:
         client.send(new_send)
         print(f"Sent new player slot to all clients: {client.id} in slot {player_slot}.")

@@ -77,7 +77,7 @@ def recv_handler(conn: connect.client_connection) -> None:
                     p2 = unloaded_data["p2"]
                     p3 = unloaded_data["p3"]
                     p4 = unloaded_data["p4"]
-
+                    
                     with conn.player_list_lock:
                         conn.player_list["1"]["uuid"] = p1
                         conn.player_list["2"]["uuid"] = p2
@@ -213,15 +213,32 @@ try:
     print(f"Connected with ID: {id}")
 
     # Get assigned player slot from server and assign player to position striker
-    current_slot = packet.unload_packet(c.receive())
-    if not isinstance(current_slot["slot"], int):
-        raise ValueError("Invalid player slot received from server.")
-    c.player_slot = current_slot["slot"]
-    print(f"Player Slot: {c.player_slot}")
-    if c.player_slot in [1, 2]:
-        is_vertical = True
-    else:
-        is_vertical = False
+    while c.player_slot is None:
+        msg = c.receive()
+
+        if not msg:
+            raise ConnectionError("No slot received.")
+
+        if len(msg) < 1:
+            continue
+        try:
+            current_slot = packet.unload_packet(msg)
+        except ValueError as e:
+            print(f"{e}")
+            continue
+
+        if not isinstance(current_slot, dict):
+            continue
+
+        if not isinstance(current_slot["slot"], int):
+            continue
+
+        c.player_slot = current_slot["slot"]
+        print(f"Player Slot: {c.player_slot}")
+        if c.player_slot in [1, 2]:
+            is_vertical = True
+        else:
+            is_vertical = False
 
     # vertical strikers
     player1 = striker(20, (pong_setup.HEIGHT / 2) - 50, 10, 100, 10, pong_setup.GREEN)

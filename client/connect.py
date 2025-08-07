@@ -8,6 +8,7 @@ import shared.packet as packet
 from typing import Optional
 
 RECV_SIZE = 1024
+TIMEOUT = 10
 
 class client_connection:
     '''
@@ -71,20 +72,27 @@ class client_connection:
         self.socket.sendall(packet_data + b'\n')  
 
     def receive(self) -> bytes:
-
+        self.socket.settimeout(TIMEOUT)
         buff = b''
-        while True:
-            d = self.socket.recv(self.recv_size)
 
-            if not d:
-                raise ConnectionError("Connection closed.")
-            buff += d
-            if b'\n' in buff:
-                full_data, buff = buff.split(b'\n', 1)
-                return full_data
+        try:
+            while True:
+                d = self.socket.recv(self.recv_size)
+
+                if not d:
+                    raise ConnectionError("Connection closed.")
+                buff += d
+                if b'\n' in buff:
+                    full_data, buff = buff.split(b'\n', 1)
+                    return full_data
+                
+        except socket.timeout:
+            raise ConnectionError("Socket timed out.")
+        finally:
+            self.socket.settimeout(None) 
+
+
             
-            if len(buff) >= self.recv_size:
-                return buff
     
     def start_recieving(self, recv_handler) -> None:
         '''
